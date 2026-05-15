@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, Loader2, AlertTriangle, CheckCircle, ChevronDown, ChevronRight,
   ArrowDown, Cog, Eye, Truck, Clock, Archive, ClipboardList, Layers, FileText,
-  Download, RefreshCw, X, Check, GitFork,
+  Download, RefreshCw, X, Check, GitFork, Printer,
 } from "lucide-react";
 import type {
   ApqpProcessStep, ApqpPfmeaRow, ApqpControlPlanRow,
@@ -251,6 +251,14 @@ function PfmeaTab({ projectId }: { projectId: number }) {
   const { toast } = useToast();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [edits, setEdits] = useState<Record<number, Partial<ApqpPfmeaRow>>>({});
+  const [hdrOpen, setHdrOpen] = useState(false);
+  const [hdr, setHdr] = useState({
+    fmeaNumber: "", item: "", processResp: "", preparedBy: "",
+    modelYear: "", keyDate: "", dateOrig: "", dateRev: "",
+    coreTeam: "", custEngApproval: "", custEngApprovalDate: "",
+    custQualApproval: "", custQualApprovalDate: "",
+    supplierApproval: "", supplierApprovalDate: "",
+  });
 
   const { data: steps = [] } = useQuery<ApqpProcessStep[]>({
     queryKey: ["/api/apqp", projectId, "process-steps"],
@@ -302,22 +310,178 @@ function PfmeaTab({ projectId }: { projectId: number }) {
     if (edits[id]) { updateMut.mutate({ id, data: edits[id] }); setEdits(e => { const n = { ...e }; delete n[id]; return n; }); }
   };
 
+  const printAiag = () => {
+    const w = window.open("", "_blank", "width=1400,height=900");
+    if (!w) return;
+    const esc = (s: any) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const rpnBg = (n: number) => n >= 200 ? "#ffcccc" : n >= 120 ? "#ffe0a0" : n >= 60 ? "#fffacd" : "transparent";
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Process FMEA</title>
+<style>
+@page{size:A3 landscape;margin:1cm}
+body{font-family:Arial,Helvetica,sans-serif;font-size:7pt;color:#000}
+.hdr{width:100%;border-collapse:collapse;margin-bottom:6px}
+.hdr td{border:1px solid #000;padding:3px 5px;vertical-align:top}
+.lbl{font-weight:700;font-size:6.5pt;color:#333;display:block;margin-bottom:1px}
+table{width:100%;border-collapse:collapse}
+th{background:#d0d8e8;border:1px solid #000;padding:2px 3px;text-align:center;font-size:6.5pt;vertical-align:middle}
+td{border:1px solid #888;padding:2px 3px;font-size:7pt;vertical-align:top;word-break:break-word}
+.c{text-align:center;vertical-align:middle}
+.cc{color:#c00;font-weight:700}.kpc{color:#00c;font-weight:700}
+tr:nth-child(even) td{background:#f9fafc}
+h2{font-size:10pt;text-align:center;margin:0 0 4px 0;font-weight:700;letter-spacing:.5px}
+</style></head><body>
+<h2>PROCESS FAILURE MODE AND EFFECTS ANALYSIS (PROCESS FMEA)</h2>
+<table class="hdr">
+<tr>
+  <td style="width:33%"><span class="lbl">FMEA NUMBER:</span>${esc(hdr.fmeaNumber)}</td>
+  <td style="width:34%"><span class="lbl">ITEM (Part Name / Function):</span>${esc(hdr.item)}</td>
+  <td style="width:33%"><span class="lbl">KEY DATE:</span>${esc(hdr.keyDate)}</td>
+</tr>
+<tr>
+  <td><span class="lbl">PROCESS RESPONSIBILITY:</span>${esc(hdr.processResp)}</td>
+  <td><span class="lbl">MODEL YEAR(S) / VEHICLE(S) / PROGRAM(S):</span>${esc(hdr.modelYear)}</td>
+  <td><span class="lbl">FMEA DATE &nbsp;<em>(Orig.)</em>:</span>${esc(hdr.dateOrig)}&emsp;<span class="lbl" style="display:inline"><em>(Rev.)</em>:</span> ${esc(hdr.dateRev)}</td>
+</tr>
+<tr>
+  <td><span class="lbl">PREPARED BY (Name / Phone / Dept.):</span>${esc(hdr.preparedBy)}</td>
+  <td colspan="2"><span class="lbl">CORE TEAM:</span>${esc(hdr.coreTeam)}</td>
+</tr>
+<tr>
+  <td><span class="lbl">CUST. ENG. APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(hdr.custEngApproval)} &nbsp;/ ${esc(hdr.custEngApprovalDate)}</td>
+  <td><span class="lbl">CUST. QUALITY APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(hdr.custQualApproval)} &nbsp;/ ${esc(hdr.custQualApprovalDate)}</td>
+  <td><span class="lbl">SUPPLIER / PLANT APPROVAL / DATE:</span>${esc(hdr.supplierApproval)} &nbsp;/ ${esc(hdr.supplierApprovalDate)}</td>
+</tr>
+</table>
+<table>
+<thead>
+<tr>
+  <th rowspan="2" style="width:9%">Process Step /<br/>Function / Requirements</th>
+  <th rowspan="2" style="width:8%">Potential<br/>Failure Mode</th>
+  <th rowspan="2" style="width:9%">Potential<br/>Effect(s) of Failure</th>
+  <th rowspan="2" style="width:22px">Sev</th>
+  <th rowspan="2" style="width:28px">Class</th>
+  <th rowspan="2" style="width:9%">Potential Cause(s) /<br/>Mechanism(s) of Failure</th>
+  <th colspan="2" style="width:18%">Current Process Controls</th>
+  <th rowspan="2" style="width:22px">Occ</th>
+  <th rowspan="2" style="width:22px">Det</th>
+  <th rowspan="2" style="width:28px">RPN</th>
+  <th rowspan="2" style="width:9%">Recommended<br/>Action(s)</th>
+  <th rowspan="2" style="width:8%">Responsibility &amp;<br/>Target Completion Date</th>
+  <th rowspan="2" style="width:9%">Actions Taken</th>
+  <th colspan="4">Resulting</th>
+</tr>
+<tr>
+  <th>Prevention</th>
+  <th>Detection</th>
+  <th style="width:22px">Sev</th>
+  <th style="width:22px">Occ</th>
+  <th style="width:22px">Det</th>
+  <th style="width:28px">RPN</th>
+</tr>
+</thead>
+<tbody>
+${rows.map(row => {
+  const s=row.severity??5, o=row.occurrence??5, d=row.detection??5, rpn=s*o*d;
+  const rs=row.resultingSeverity, ro=row.resultingOccurrence, rd=row.resultingDetection;
+  const rRpn=rs&&ro&&rd?rs*ro*rd:null;
+  const cls=row.classification==="CC"?"cc":row.classification==="KPC"?"kpc":"";
+  return `<tr>
+    <td>${esc(row.processStep)}<br/><span style="font-size:6pt;color:#666">${esc(row.processFunction)}</span></td>
+    <td>${esc(row.failureMode)}</td>
+    <td>${esc(row.failureEffect)}</td>
+    <td class="c" style="background:${rpnBg(s)}">${s}</td>
+    <td class="c ${cls}">${esc(row.classification)}</td>
+    <td>${esc(row.failureCause)}</td>
+    <td>${esc(row.preventionControl)}</td>
+    <td>${esc(row.detectionControl)}</td>
+    <td class="c">${o}</td>
+    <td class="c">${d}</td>
+    <td class="c" style="background:${rpnBg(rpn)};font-weight:${rpn>=120?"700":"400"}">${rpn}</td>
+    <td>${esc(row.recommendedAction)}</td>
+    <td>${esc(row.responsibility)}<br/><span style="color:#555;font-size:6pt">${esc(row.targetDate)}</span></td>
+    <td>${esc(row.actionTaken)}</td>
+    <td class="c">${rs??""}</td>
+    <td class="c">${ro??""}</td>
+    <td class="c">${rd??""}</td>
+    <td class="c" style="background:${rRpn?rpnBg(rRpn):"transparent"};font-weight:${(rRpn??0)>=120?"700":"400"}">${rRpn??""}</td>
+  </tr>`;
+}).join("")}
+</tbody></table></body></html>`);
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 600);
+  };
+
   if (isLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
 
   const flaggedCount = rows.filter(r => r.reviewFlag).length;
 
   return (
     <div className="p-4 space-y-4">
+
+      {/* ── AIAG PFMEA Header Block ── */}
+      <div className="rounded-xl border border-border/50 overflow-hidden">
+        <button className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors" onClick={() => setHdrOpen(h => !h)} data-testid="btn-pfmea-header-toggle">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-accent" />
+            <span className="font-semibold text-sm">PFMEA Header</span>
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">AIAG 4th Ed.</Badge>
+            {hdr.fmeaNumber && <span className="text-xs text-muted-foreground">#{hdr.fmeaNumber}</span>}
+          </div>
+          {hdrOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {hdrOpen && (
+          <div className="p-4 border-t border-border/30 space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Number</Label><Input value={hdr.fmeaNumber} onChange={e => setHdr(h=>({...h,fmeaNumber:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="FMEA-XXX-001" data-testid="pfmea-hdr-number" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Item (Part Name / Function)</Label><Input value={hdr.item} onChange={e => setHdr(h=>({...h,item:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Part name / function" data-testid="pfmea-hdr-item" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Date</Label><Input type="date" value={hdr.keyDate} onChange={e => setHdr(h=>({...h,keyDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-keydate" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Process Responsibility</Label><Input value={hdr.processResp} onChange={e => setHdr(h=>({...h,processResp:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Dept. / Team" data-testid="pfmea-hdr-resp" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Model Year(s) / Vehicle(s)</Label><Input value={hdr.modelYear} onChange={e => setHdr(h=>({...h,modelYear:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="MY2027 / F-150" data-testid="pfmea-hdr-model" /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Date (Orig.)</Label><Input type="date" value={hdr.dateOrig} onChange={e => setHdr(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-dateorig" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">(Rev.)</Label><Input type="date" value={hdr.dateRev} onChange={e => setHdr(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-daterev" /></div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Prepared By (Name / Phone / Dept.)</Label><Input value={hdr.preparedBy} onChange={e => setHdr(h=>({...h,preparedBy:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Engineer name, ext. 1234" data-testid="pfmea-hdr-prepby" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={hdr.coreTeam} onChange={e => setHdr(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="E. Vasquez, M. Webb, R&D, Mfg, QE" data-testid="pfmea-hdr-team" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border/20">
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Eng. Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={hdr.custEngApproval} onChange={e => setHdr(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custeng" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.custEngApprovalDate} onChange={e => setHdr(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-custeng-date" /></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Quality Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={hdr.custQualApproval} onChange={e => setHdr(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custqual" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.custQualApprovalDate} onChange={e => setHdr(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-custqual-date" /></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant Approval</Label><Input value={hdr.supplierApproval} onChange={e => setHdr(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-supplier" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.supplierApprovalDate} onChange={e => setHdr(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-supplier-date" /></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Toolbar ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="font-semibold text-sm">Process FMEA <span className="text-muted-foreground font-normal">(AIAG 4th Edition)</span></h3>
-          <p className="text-xs text-muted-foreground mt-0.5">S×O×D = RPN. Rows linked to process steps. Changes flag linked Control Plan rows.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">S×O×D = RPN · Severity / Occurrence / Detection 1–10 · Rows linked to process steps</p>
         </div>
         <div className="flex items-center gap-2">
           {flaggedCount > 0 && (
             <Badge className="bg-amber-100 text-amber-700 border-amber-300 text-xs gap-1">
               <AlertTriangle className="w-3 h-3" />{flaggedCount} review{flaggedCount > 1 ? "s" : ""} needed
             </Badge>
+          )}
+          {rows.length > 0 && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={printAiag} data-testid="btn-print-pfmea">
+              <Printer className="w-3 h-3" />Print AIAG Format
+            </Button>
           )}
           <Button size="sm" className="gap-1.5 h-8 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => createMut.mutate()} disabled={createMut.isPending} data-testid="btn-add-pfmea-row">
             {createMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}Add Row
@@ -335,21 +499,33 @@ function PfmeaTab({ projectId }: { projectId: number }) {
         <div className="rounded-xl border border-border/50 overflow-x-auto">
           <table className="min-w-full text-xs">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/40">
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground w-6" />
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Process Step</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Function</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Failure Mode</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Effect(s)</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-12">S</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-14">Class</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Cause(s)</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-12">O</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Prevention</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Detection</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-12">D</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-16">RPN</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground w-8" />
+              {/* Row 1 — AIAG group headers */}
+              <tr className="bg-slate-100 dark:bg-slate-900/70 border-b border-border/40 text-center">
+                <th rowSpan={2} className="px-1 py-1 w-6 border-r border-border/30" />
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[110px] border-r border-border/30">Process Step /<br/>Function / Reqmts.</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border/30">Potential<br/>Failure Mode</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border/30">Potential Effect(s)<br/>of Failure</th>
+                <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground w-10 border-r border-border/30">Sev</th>
+                <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground w-14 border-r border-border/30">Class</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border/30">Potential Cause(s) /<br/>Mechanism(s)</th>
+                <th colSpan={2} className="px-2 py-1 font-semibold text-muted-foreground border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Current Process Controls</th>
+                <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground w-10 border-r border-border/30">Occ</th>
+                <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground w-10 border-r border-border/30">Det</th>
+                <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground w-14 border-r border-border/30">RPN</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border/30">Recommended<br/>Action(s)</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[80px] border-r border-border/30">Responsibility &amp;<br/>Target Date</th>
+                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-muted-foreground min-w-[80px] border-r border-border/30">Actions Taken</th>
+                <th colSpan={4} className="px-2 py-1 font-semibold text-muted-foreground bg-emerald-50 dark:bg-emerald-950/30">Resulting</th>
+                <th rowSpan={2} className="px-1 py-1 w-8" />
+              </tr>
+              {/* Row 2 — sub-headers */}
+              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/40 text-center text-muted-foreground">
+                <th className="px-2 py-1 font-medium text-xs min-w-[90px] border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Prevention</th>
+                <th className="px-2 py-1 font-medium text-xs min-w-[90px] border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Detection</th>
+                <th className="px-2 py-1 font-medium text-xs w-10 border-r border-border/30 bg-emerald-50 dark:bg-emerald-950/30">Sev</th>
+                <th className="px-2 py-1 font-medium text-xs w-10 border-r border-border/30 bg-emerald-50 dark:bg-emerald-950/30">Occ</th>
+                <th className="px-2 py-1 font-medium text-xs w-10 border-r border-border/30 bg-emerald-50 dark:bg-emerald-950/30">Det</th>
+                <th className="px-2 py-1 font-medium text-xs w-14 border-r border-border/30 bg-emerald-50 dark:bg-emerald-950/30">RPN</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -558,66 +734,229 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
     if (edits[id]) { updateMut.mutate({ id, data: edits[id] }); setEdits(e => { const n = { ...e }; delete n[id]; return n; }); }
   };
 
+  const [cpFormat, setCpFormat] = useState<"aiag" | "vda">("aiag");
+
   const flaggedCount = rows.filter(r => r.reviewFlag).length;
   if (isLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
 
+  const planTypeLabel = cpHeader.planType === "prototype" ? "Prototype" : cpHeader.planType === "pre_launch" ? "Pre-Launch" : "Production";
+
+  const printControlPlan = () => {
+    const w = window.open("", "_blank", "width=1400,height=900");
+    if (!w) return;
+    const esc = (s: any) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const isVda = cpFormat === "vda";
+    const bodyRows = rows.map(row => isVda ? `<tr>
+      <td>${esc(row.partProcessNumber)}</td>
+      <td>${esc(row.processName)}</td>
+      <td>${esc(row.machineDeviceJig)}</td>
+      <td class="c">${esc(row.charNumber)}</td>
+      <td>${esc(row.charName)}</td>
+      <td class="c">${row.charType==="product"?"D":"P"}</td>
+      <td class="c">${esc(row.specialCharClass)}</td>
+      <td>${esc(row.productSpec)}</td>
+      <td>${esc(row.errorPrevention)}</td>
+      <td>${esc(row.evalMeasureTech)}</td>
+      <td class="c">${esc(row.sampleSize)}</td>
+      <td class="c">${esc(row.sampleFrequency)}</td>
+      <td>${esc(row.documentRecord)}</td>
+      <td>${esc(row.reactionPlan)}</td>
+      <td>${esc(row.responsiblePerson)}</td>
+    </tr>` : `<tr>
+      <td>${esc(row.partProcessNumber)}</td>
+      <td>${esc(row.processName)}</td>
+      <td>${esc(row.machineDeviceJig)}</td>
+      <td class="c">${esc(row.charNumber)}</td>
+      <td class="c">${row.charType==="product"?"Product":row.charType==="process"?"Process":""}</td>
+      <td class="c">${esc(row.specialCharClass)}</td>
+      <td>${esc(row.productSpec)}</td>
+      <td>${esc(row.evalMeasureTech)}</td>
+      <td class="c">${esc(row.sampleSize)}</td>
+      <td class="c">${esc(row.sampleFrequency)}</td>
+      <td>${esc(row.controlMethod)}</td>
+      <td>${esc(row.reactionPlan)}</td>
+    </tr>`).join("");
+    const aiagTheadRow1=`<tr>
+      <th rowspan="2" style="width:6%">Part/Process #</th>
+      <th rowspan="2" style="width:10%">Process Name / Operation Description</th>
+      <th rowspan="2" style="width:8%">Machine, Device, Jig, Tools for Mfg</th>
+      <th colspan="3" style="width:14%">Characteristics</th>
+      <th rowspan="2" style="width:8%">Product/Process Specification/Tolerance</th>
+      <th rowspan="2" style="width:9%">Evaluation/Measurement Technique</th>
+      <th colspan="2" style="width:10%">Sample</th>
+      <th rowspan="2" style="width:9%">Control Method</th>
+      <th rowspan="2" style="width:9%">Reaction Plan</th>
+    </tr>`;
+    const aiagTheadRow2=`<tr>
+      <th>Number</th><th>Product / Process</th><th>Special Char. Class.</th>
+      <th>Size</th><th>Freq.</th>
+    </tr>`;
+    const vdaTheadRow1=`<tr>
+      <th rowspan="2" style="width:5%">Step Nr.</th>
+      <th rowspan="2" style="width:9%">Process Step / Operation Description</th>
+      <th rowspan="2" style="width:8%">Machine / Equipment / Tools</th>
+      <th colspan="4" style="width:14%">Characteristics</th>
+      <th rowspan="2" style="width:8%">Specification / Tolerance</th>
+      <th rowspan="2" style="width:8%">Error Prevention Method</th>
+      <th colspan="4" style="width:18%">Testing / Detection</th>
+      <th rowspan="2" style="width:8%">Reaction Plan</th>
+      <th rowspan="2" style="width:7%">Responsible</th>
+    </tr>`;
+    const vdaTheadRow2=`<tr>
+      <th>Nr.</th><th>Designation</th><th>Class (D/P)</th><th>Symbol</th>
+      <th>Test Method</th><th>Size</th><th>Frequency</th><th>Documentation</th>
+    </tr>`;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Control Plan — ${isVda?"VDA":"AIAG"} Format</title>
+<style>
+@page{size:A3 landscape;margin:1cm}
+body{font-family:Arial,Helvetica,sans-serif;font-size:7pt;color:#000}
+.hdr{width:100%;border-collapse:collapse;margin-bottom:6px}
+.hdr td{border:1px solid #000;padding:3px 5px;vertical-align:top}
+.lbl{font-weight:700;font-size:6.5pt;color:#333;display:block;margin-bottom:1px}
+.ptbox{display:inline-block;border:1px solid #000;width:9px;height:9px;margin-right:3px;vertical-align:middle;text-align:center;font-size:7pt;line-height:9px}
+table{width:100%;border-collapse:collapse}
+th{background:#d0d8e8;border:1px solid #000;padding:2px 3px;text-align:center;font-size:6.5pt;vertical-align:middle}
+td{border:1px solid #888;padding:2px 3px;font-size:7pt;vertical-align:top;word-break:break-word}
+.c{text-align:center;vertical-align:middle}
+tr:nth-child(even) td{background:#f9fafc}
+h2{font-size:10pt;text-align:center;margin:0 0 4px 0;font-weight:700;letter-spacing:.5px}
+</style></head><body>
+<h2>CONTROL PLAN${isVda?" (VDA FORMAT)":""}</h2>
+<table class="hdr">
+<tr>
+  <td style="width:18%;vertical-align:middle">
+    <div><span class="ptbox">${cpHeader.planType==="prototype"?"✓":""}</span><b>Prototype</b></div>
+    <div><span class="ptbox">${cpHeader.planType==="pre_launch"?"✓":""}</span><b>Pre-Launch</b></div>
+    <div><span class="ptbox">${cpHeader.planType==="production"?"✓":""}</span><b>Production</b></div>
+  </td>
+  <td style="width:28%">
+    <span class="lbl">CONTROL PLAN NUMBER:</span>${esc(cpHeader.controlPlanNumber)}<br/>
+    <span class="lbl">PART NUMBER / LATEST CHANGE LEVEL:</span>${esc(cpHeader.partNumberRev)}
+  </td>
+  <td style="width:27%">
+    <span class="lbl">PART NAME / DESCRIPTION:</span>${esc(cpHeader.partName)}<br/>
+    <span class="lbl">SUPPLIER / PLANT AND CODE:</span>${esc(cpHeader.supplierPlant)} / ${esc(cpHeader.supplierCode)}
+  </td>
+  <td style="width:27%">
+    <span class="lbl">KEY CONTACT / PHONE:</span>${esc(cpHeader.keyContact)} / ${esc(cpHeader.phone)}<br/>
+    <span class="lbl">DATE (ORIG.):</span> ${esc(cpHeader.dateOrig)} &emsp; <span class="lbl" style="display:inline">(REV.):</span> ${esc(cpHeader.dateRev)}
+  </td>
+</tr>
+<tr>
+  <td colspan="2"><span class="lbl">CORE TEAM:</span>${esc(cpHeader.coreTeam)}</td>
+  <td><span class="lbl">CUST. ENG. APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(cpHeader.custEngApproval)} / ${esc(cpHeader.custEngApprovalDate)}</td>
+  <td>
+    <span class="lbl">CUST. QUALITY APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(cpHeader.custQualApproval)} / ${esc(cpHeader.custQualApprovalDate)}<br/>
+    <span class="lbl">SUPPLIER / PLANT APPROVAL / DATE:</span>${esc(cpHeader.supplierApproval)} / ${esc(cpHeader.supplierApprovalDate)}
+  </td>
+</tr>
+</table>
+<table>
+<thead>${isVda?vdaTheadRow1+vdaTheadRow2:aiagTheadRow1+aiagTheadRow2}</thead>
+<tbody>${bodyRows}</tbody>
+</table>
+</body></html>`);
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 600);
+  };
+
   return (
     <div className="p-4 space-y-4">
-      {/* Header */}
+
+      {/* ── AIAG Control Plan Header Block ── */}
       <div className="rounded-xl border border-border/50 overflow-hidden">
-        <button className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 transition-colors" onClick={() => setHeaderOpen(h => !h)}>
+        <button className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors" onClick={() => setHeaderOpen(h => !h)} data-testid="btn-cp-header-toggle">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-accent" />
             <span className="font-semibold text-sm">Control Plan Header</span>
             <Badge variant="outline" className={`text-xs ${cpHeader.planType === "prototype" ? "border-purple-300 text-purple-700" : cpHeader.planType === "pre_launch" ? "border-amber-300 text-amber-700" : "border-emerald-300 text-emerald-700"}`}>
-              {cpHeader.planType === "prototype" ? "Prototype" : cpHeader.planType === "pre_launch" ? "Pre-Launch" : "Production"}
+              {planTypeLabel}
             </Badge>
+            {cpHeader.controlPlanNumber && <span className="text-xs text-muted-foreground">#{cpHeader.controlPlanNumber}</span>}
           </div>
           {headerOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
         </button>
         {headerOpen && (
-          <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-border/30">
-            <div className="col-span-2 md:col-span-4">
-              <Label className="text-xs">Plan Type</Label>
-              <div className="flex gap-2 mt-1">
-                {["prototype","pre_launch","production"].map(pt => (
-                  <button key={pt} onClick={() => setCpHeader(h => ({ ...h, planType: pt }))}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${cpHeader.planType === pt ? "bg-accent text-white border-accent" : "border-border hover:bg-slate-50"}`}
-                    data-testid={`btn-plan-type-${pt}`}>
-                    {pt === "prototype" ? "Prototype" : pt === "pre_launch" ? "Pre-Launch" : "Production"}
-                  </button>
-                ))}
+          <div className="p-4 border-t border-border/30 space-y-3">
+            {/* Plan Type + Key IDs */}
+            <div className="flex items-start gap-6">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Plan Type</Label>
+                <div className="flex gap-2 mt-1.5">
+                  {(["prototype","pre_launch","production"] as const).map(pt => (
+                    <button key={pt} onClick={() => setCpHeader(h => ({ ...h, planType: pt }))}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${cpHeader.planType === pt ? "bg-accent text-white border-accent" : "border-border hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+                      data-testid={`btn-plan-type-${pt}`}>
+                      {pt === "prototype" ? "Prototype" : pt === "pre_launch" ? "Pre-Launch" : "Production"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Control Plan #</Label><Input value={cpHeader.controlPlanNumber} onChange={e => setCpHeader(h=>({...h,controlPlanNumber:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="CP-001" data-testid="cp-header-controlPlanNumber" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Part Name / Description</Label><Input value={cpHeader.partName} onChange={e => setCpHeader(h=>({...h,partName:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-partName" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Part # / Rev Level</Label><Input value={cpHeader.partNumberRev} onChange={e => setCpHeader(h=>({...h,partNumberRev:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="12345-A" data-testid="cp-header-partNumberRev" /></div>
               </div>
             </div>
-            {[
-              { label: "Control Plan #", key: "controlPlanNumber" }, { label: "Part Name", key: "partName" },
-              { label: "Part # / Rev Level", key: "partNumberRev" }, { label: "Supplier / Plant", key: "supplierPlant" },
-              { label: "Supplier Code", key: "supplierCode" }, { label: "Key Contact", key: "keyContact" },
-              { label: "Phone", key: "phone" }, { label: "Core Team", key: "coreTeam" },
-              { label: "Date (Orig)", key: "dateOrig", type: "date" }, { label: "Date (Rev)", key: "dateRev", type: "date" },
-              { label: "Cust. Eng. Approval", key: "custEngApproval" }, { label: "Approval Date", key: "custEngApprovalDate", type: "date" },
-              { label: "Cust. Quality Approval", key: "custQualApproval" }, { label: "Approval Date", key: "custQualApprovalDate", type: "date" },
-              { label: "Supplier Approval", key: "supplierApproval" }, { label: "Approval Date", key: "supplierApprovalDate", type: "date" },
-            ].map(({ label, key, type }) => (
-              <div key={key}>
-                <Label className="text-xs">{label}</Label>
-                <Input type={type ?? "text"} value={(cpHeader as any)[key] ?? ""} onChange={e => setCpHeader(h => ({ ...h, [key]: e.target.value }))} className="h-7 text-xs mt-0.5" data-testid={`cp-header-${key}`} />
+            {/* Supplier + Contact row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant</Label><Input value={cpHeader.supplierPlant} onChange={e => setCpHeader(h=>({...h,supplierPlant:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierPlant" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier Code</Label><Input value={cpHeader.supplierCode} onChange={e => setCpHeader(h=>({...h,supplierCode:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierCode" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Contact</Label><Input value={cpHeader.keyContact} onChange={e => setCpHeader(h=>({...h,keyContact:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-keyContact" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</Label><Input value={cpHeader.phone} onChange={e => setCpHeader(h=>({...h,phone:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-phone" /></div>
+            </div>
+            {/* Core Team + Dates */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={cpHeader.coreTeam} onChange={e => setCpHeader(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Members..." data-testid="cp-header-coreTeam" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Orig.)</Label><Input type="date" value={cpHeader.dateOrig} onChange={e => setCpHeader(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-dateOrig" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Rev.)</Label><Input type="date" value={cpHeader.dateRev} onChange={e => setCpHeader(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-dateRev" /></div>
+            </div>
+            {/* Approvals */}
+            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border/20">
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Eng. Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={cpHeader.custEngApproval} onChange={e => setCpHeader(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custEngApproval" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.custEngApprovalDate} onChange={e => setCpHeader(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-custEngApprovalDate" /></div>
               </div>
-            ))}
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Quality Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={cpHeader.custQualApproval} onChange={e => setCpHeader(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custQualApproval" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.custQualApprovalDate} onChange={e => setCpHeader(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-custQualApprovalDate" /></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant Approval</Label><Input value={cpHeader.supplierApproval} onChange={e => setCpHeader(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierApproval" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.supplierApprovalDate} onChange={e => setCpHeader(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-supplierApprovalDate" /></div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
+      {/* ── Toolbar — format toggle + actions ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h3 className="font-semibold text-sm">Control Plan Characteristics</h3>
-          <p className="text-xs text-muted-foreground">AIAG Control Plan Manual — product & process characteristics with measurement & control methods.</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="font-semibold text-sm">Control Plan Characteristics</h3>
+            <p className="text-xs text-muted-foreground">AIAG Control Plan Manual / VDA Volume 4 — product &amp; process characteristics with measurement &amp; control methods</p>
+          </div>
+          {/* Format toggle */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
+            <button onClick={() => setCpFormat("aiag")}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${cpFormat==="aiag" ? "bg-accent text-white" : "bg-transparent text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              data-testid="btn-cp-format-aiag">AIAG</button>
+            <button onClick={() => setCpFormat("vda")}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors border-l border-border ${cpFormat==="vda" ? "bg-accent text-white" : "bg-transparent text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              data-testid="btn-cp-format-vda">VDA</button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {flaggedCount > 0 && (
             <Badge className="bg-amber-100 text-amber-700 border-amber-300 text-xs gap-1">
               <AlertTriangle className="w-3 h-3" />{flaggedCount} review{flaggedCount > 1 ? "s" : ""}
             </Badge>
+          )}
+          {rows.length > 0 && (
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={printControlPlan} data-testid="btn-print-cp">
+              <Printer className="w-3 h-3" />Print {cpFormat === "vda" ? "VDA" : "AIAG"} Format
+            </Button>
           )}
           {pfmeaRows.length > 0 && (
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => importMut.mutate()} disabled={importMut.isPending} data-testid="btn-import-pfmea">
@@ -639,29 +978,63 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
       ) : (
         <div className="rounded-xl border border-border/50 overflow-x-auto">
           <table className="min-w-full text-xs">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/40">
-                <th className="px-1 py-2 w-6" />
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Part/Process #</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[100px]">Process Name / Op Description</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[80px]">Machine/Device/Jig</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-12">Char #</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-20">Type</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Characteristic</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-14">Class</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Spec / Tolerance</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[90px]">Meas. Technique</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-16">Sample Size</th>
-                <th className="px-2 py-2 text-center font-semibold text-muted-foreground w-20">Frequency</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[80px]">Control Method</th>
-                <th className="px-2 py-2 text-left font-semibold text-muted-foreground min-w-[80px]">Reaction Plan</th>
-                <th className="px-1 py-2 w-8" />
-              </tr>
-            </thead>
+            {cpFormat === "aiag" ? (
+              <thead>
+                {/* AIAG Control Plan — two-row grouped header */}
+                <tr className="bg-slate-100 dark:bg-slate-900/70 border-b border-border/30 text-center">
+                  <th rowSpan={2} className="px-1 py-1 w-6 border-r border-border/30" />
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30">Part /<br/>Process #</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[110px] border-r border-border/30">Process Name /<br/>Operation Description</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[90px] border-r border-border/30">Machine, Device,<br/>Jig, Tools for Mfg</th>
+                  <th colSpan={3} className="px-2 py-1 font-semibold text-muted-foreground border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Characteristics</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[90px] border-r border-border/30">Product/Process<br/>Spec./Tolerance</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[90px] border-r border-border/30">Eval./Measurement<br/>Technique</th>
+                  <th colSpan={2} className="px-2 py-1 font-semibold text-muted-foreground border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Sample</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30">Control Method</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30">Reaction Plan</th>
+                  <th rowSpan={2} className="px-1 py-1 w-8" />
+                </tr>
+                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/40 text-center text-muted-foreground">
+                  <th className="px-2 py-1 font-medium text-xs w-10 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Number</th>
+                  <th className="px-2 py-1 font-medium text-xs w-20 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Product /<br/>Process</th>
+                  <th className="px-2 py-1 font-medium text-xs w-16 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Special Char.<br/>Class.</th>
+                  <th className="px-2 py-1 font-medium text-xs w-16 border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Size</th>
+                  <th className="px-2 py-1 font-medium text-xs w-16 border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Freq.</th>
+                </tr>
+              </thead>
+            ) : (
+              <thead>
+                {/* VDA Control Plan (VDA Volume 4) — two-row grouped header */}
+                <tr className="bg-slate-100 dark:bg-slate-900/70 border-b border-border/30 text-center">
+                  <th rowSpan={2} className="px-1 py-1 w-6 border-r border-border/30" />
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[60px] border-r border-border/30">Step Nr.</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[110px] border-r border-border/30">Process Step /<br/>Operation Description</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[90px] border-r border-border/30">Machine /<br/>Equipment / Tools</th>
+                  <th colSpan={4} className="px-2 py-1 font-semibold text-muted-foreground border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Characteristics</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30">Specification /<br/>Tolerance</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30 bg-amber-50 dark:bg-amber-950/30">Error Prevention<br/>Method</th>
+                  <th colSpan={4} className="px-2 py-1 font-semibold text-muted-foreground border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Testing / Detection</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[80px] border-r border-border/30">Reaction Plan</th>
+                  <th rowSpan={2} className="px-2 py-1 font-semibold text-muted-foreground text-left min-w-[70px] border-r border-border/30">Responsible</th>
+                  <th rowSpan={2} className="px-1 py-1 w-8" />
+                </tr>
+                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/40 text-center text-muted-foreground">
+                  <th className="px-1 py-1 font-medium text-xs w-10 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Nr.</th>
+                  <th className="px-2 py-1 font-medium text-xs min-w-[80px] border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Designation</th>
+                  <th className="px-1 py-1 font-medium text-xs w-16 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Class<br/>(D/P)</th>
+                  <th className="px-1 py-1 font-medium text-xs w-14 border-r border-border/30 bg-purple-50 dark:bg-purple-950/30">Special<br/>Symbol</th>
+                  <th className="px-2 py-1 font-medium text-xs min-w-[80px] border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Test Method /<br/>Instrument</th>
+                  <th className="px-1 py-1 font-medium text-xs w-14 border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Size</th>
+                  <th className="px-1 py-1 font-medium text-xs w-16 border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Frequency</th>
+                  <th className="px-2 py-1 font-medium text-xs min-w-[80px] border-r border-border/30 bg-blue-50 dark:bg-blue-950/30">Documentation /<br/>Record</th>
+                </tr>
+              </thead>
+            )}
             <tbody className="divide-y divide-border/30">
               {rows.map(row => {
                 const expanded = expandedRow === row.id;
                 const isDirty = !!edits[row.id];
+                const expandColSpan = cpFormat === "vda" ? 17 : 14;
                 return (
                   <Fragment key={row.id}>
                   <tr className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors ${row.reviewFlag ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
@@ -670,32 +1043,85 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </button>
                     </td>
+                    {/* Part/Process # or Step Nr */}
                     <td className="px-1 py-1"><Input value={val(row, "partProcessNumber") ?? ""} onChange={e => update(row.id, "partProcessNumber", e.target.value)} className="h-6 text-xs" placeholder="#" data-testid={`cp-ppnum-${row.id}`} /></td>
+                    {/* Process Name */}
                     <td className="px-1 py-1"><Input value={val(row, "processName") ?? ""} onChange={e => update(row.id, "processName", e.target.value)} className="h-6 text-xs" placeholder="Op name..." data-testid={`cp-procname-${row.id}`} /></td>
+                    {/* Machine/Device/Jig */}
                     <td className="px-1 py-1"><Input value={val(row, "machineDeviceJig") ?? ""} onChange={e => update(row.id, "machineDeviceJig", e.target.value)} className="h-6 text-xs" placeholder="Equipment..." data-testid={`cp-machine-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "charNumber") ?? ""} onChange={e => update(row.id, "charNumber", e.target.value)} className="h-6 text-xs w-12" data-testid={`cp-charnum-${row.id}`} /></td>
-                    <td className="px-1 py-1">
-                      <Select value={val(row, "charType") ?? "product"} onValueChange={v => update(row.id, "charType", v)}>
-                        <SelectTrigger className="h-6 text-xs w-20" data-testid={`cp-chartype-${row.id}`}><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="product">Product</SelectItem>
-                          <SelectItem value="process">Process</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-1 py-1"><Input value={val(row, "charName") ?? ""} onChange={e => update(row.id, "charName", e.target.value)} className="h-6 text-xs" placeholder="Characteristic..." data-testid={`cp-charname-${row.id}`} /></td>
-                    <td className="px-1 py-1">
-                      <Select value={val(row, "specialCharClass") || "__none__"} onValueChange={v => update(row.id, "specialCharClass", v === "__none__" ? "" : v)}>
-                        <SelectTrigger className="h-6 text-xs w-14" data-testid={`cp-specclass-${row.id}`}><SelectValue /></SelectTrigger>
-                        <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "__none__"} value={c || "__none__"}>{c || "—"}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-1 py-1"><Input value={val(row, "productSpec") ?? ""} onChange={e => update(row.id, "productSpec", e.target.value)} className="h-6 text-xs" placeholder="Spec..." data-testid={`cp-spec-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "evalMeasureTech") ?? ""} onChange={e => update(row.id, "evalMeasureTech", e.target.value)} className="h-6 text-xs" placeholder="CMM, gage..." data-testid={`cp-meas-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "sampleSize") ?? ""} onChange={e => update(row.id, "sampleSize", e.target.value)} className="h-6 text-xs w-16" placeholder="5 pcs" data-testid={`cp-ssize-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "sampleFrequency") ?? ""} onChange={e => update(row.id, "sampleFrequency", e.target.value)} className="h-6 text-xs w-20" placeholder="Hourly" data-testid={`cp-sfreq-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "controlMethod") ?? ""} onChange={e => update(row.id, "controlMethod", e.target.value)} className="h-6 text-xs" placeholder="SPC, attr..." data-testid={`cp-ctrl-${row.id}`} /></td>
-                    <td className="px-1 py-1"><Input value={val(row, "reactionPlan") ?? ""} onChange={e => update(row.id, "reactionPlan", e.target.value)} className="h-6 text-xs" placeholder="Reaction..." data-testid={`cp-react-${row.id}`} /></td>
+                    {/* Char Number */}
+                    <td className="px-1 py-1"><Input value={val(row, "charNumber") ?? ""} onChange={e => update(row.id, "charNumber", e.target.value)} className="h-6 text-xs w-10" data-testid={`cp-charnum-${row.id}`} /></td>
+                    {cpFormat === "aiag" ? (
+                      <>
+                        {/* AIAG: char type (Product/Process) */}
+                        <td className="px-1 py-1">
+                          <Select value={val(row, "charType") ?? "product"} onValueChange={v => update(row.id, "charType", v)}>
+                            <SelectTrigger className="h-6 text-xs w-20" data-testid={`cp-chartype-${row.id}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="product">Product</SelectItem>
+                              <SelectItem value="process">Process</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        {/* Special Char Class */}
+                        <td className="px-1 py-1">
+                          <Select value={val(row, "specialCharClass") || "__none__"} onValueChange={v => update(row.id, "specialCharClass", v === "__none__" ? "" : v)}>
+                            <SelectTrigger className="h-6 text-xs w-14" data-testid={`cp-specclass-${row.id}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "__none__"} value={c || "__none__"}>{c || "—"}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </td>
+                        {/* Spec */}
+                        <td className="px-1 py-1"><Input value={val(row, "productSpec") ?? ""} onChange={e => update(row.id, "productSpec", e.target.value)} className="h-6 text-xs" placeholder="Spec..." data-testid={`cp-spec-${row.id}`} /></td>
+                        {/* Meas Tech */}
+                        <td className="px-1 py-1"><Input value={val(row, "evalMeasureTech") ?? ""} onChange={e => update(row.id, "evalMeasureTech", e.target.value)} className="h-6 text-xs" placeholder="CMM, gage..." data-testid={`cp-meas-${row.id}`} /></td>
+                        {/* Sample Size */}
+                        <td className="px-1 py-1"><Input value={val(row, "sampleSize") ?? ""} onChange={e => update(row.id, "sampleSize", e.target.value)} className="h-6 text-xs w-16" placeholder="5 pcs" data-testid={`cp-ssize-${row.id}`} /></td>
+                        {/* Sample Freq */}
+                        <td className="px-1 py-1"><Input value={val(row, "sampleFrequency") ?? ""} onChange={e => update(row.id, "sampleFrequency", e.target.value)} className="h-6 text-xs w-16" placeholder="Hourly" data-testid={`cp-sfreq-${row.id}`} /></td>
+                        {/* Control Method */}
+                        <td className="px-1 py-1"><Input value={val(row, "controlMethod") ?? ""} onChange={e => update(row.id, "controlMethod", e.target.value)} className="h-6 text-xs" placeholder="SPC, attr..." data-testid={`cp-ctrl-${row.id}`} /></td>
+                        {/* Reaction Plan */}
+                        <td className="px-1 py-1"><Input value={val(row, "reactionPlan") ?? ""} onChange={e => update(row.id, "reactionPlan", e.target.value)} className="h-6 text-xs" placeholder="Reaction..." data-testid={`cp-react-${row.id}`} /></td>
+                      </>
+                    ) : (
+                      <>
+                        {/* VDA: Char Name (Designation) */}
+                        <td className="px-1 py-1"><Input value={val(row, "charName") ?? ""} onChange={e => update(row.id, "charName", e.target.value)} className="h-6 text-xs" placeholder="Char. name..." data-testid={`cp-charname-${row.id}`} /></td>
+                        {/* VDA: Class D/P */}
+                        <td className="px-1 py-1">
+                          <Select value={val(row, "charType") ?? "product"} onValueChange={v => update(row.id, "charType", v)}>
+                            <SelectTrigger className="h-6 text-xs w-14" data-testid={`cp-chartype-vda-${row.id}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="product">D — Design</SelectItem>
+                              <SelectItem value="process">P — Process</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        {/* VDA: Special Symbol */}
+                        <td className="px-1 py-1">
+                          <Select value={val(row, "specialCharClass") || "__none__"} onValueChange={v => update(row.id, "specialCharClass", v === "__none__" ? "" : v)}>
+                            <SelectTrigger className="h-6 text-xs w-14" data-testid={`cp-specclass-vda-${row.id}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "__none__"} value={c || "__none__"}>{c || "—"}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </td>
+                        {/* VDA: Spec */}
+                        <td className="px-1 py-1"><Input value={val(row, "productSpec") ?? ""} onChange={e => update(row.id, "productSpec", e.target.value)} className="h-6 text-xs" placeholder="Spec..." data-testid={`cp-spec-vda-${row.id}`} /></td>
+                        {/* VDA: Error Prevention */}
+                        <td className="px-1 py-1 bg-amber-50/40 dark:bg-amber-950/20"><Input value={val(row, "errorPrevention") ?? ""} onChange={e => update(row.id, "errorPrevention", e.target.value)} className="h-6 text-xs" placeholder="Poka-yoke, SPC..." data-testid={`cp-errprev-${row.id}`} /></td>
+                        {/* VDA: Test Method */}
+                        <td className="px-1 py-1"><Input value={val(row, "evalMeasureTech") ?? ""} onChange={e => update(row.id, "evalMeasureTech", e.target.value)} className="h-6 text-xs" placeholder="CMM, gage..." data-testid={`cp-meas-vda-${row.id}`} /></td>
+                        {/* VDA: Sample Size */}
+                        <td className="px-1 py-1"><Input value={val(row, "sampleSize") ?? ""} onChange={e => update(row.id, "sampleSize", e.target.value)} className="h-6 text-xs w-14" placeholder="5 pcs" data-testid={`cp-ssize-vda-${row.id}`} /></td>
+                        {/* VDA: Frequency */}
+                        <td className="px-1 py-1"><Input value={val(row, "sampleFrequency") ?? ""} onChange={e => update(row.id, "sampleFrequency", e.target.value)} className="h-6 text-xs w-16" placeholder="Hourly" data-testid={`cp-sfreq-vda-${row.id}`} /></td>
+                        {/* VDA: Documentation/Record */}
+                        <td className="px-1 py-1"><Input value={val(row, "documentRecord") ?? ""} onChange={e => update(row.id, "documentRecord", e.target.value)} className="h-6 text-xs" placeholder="Form, log..." data-testid={`cp-docrec-${row.id}`} /></td>
+                        {/* VDA: Reaction Plan */}
+                        <td className="px-1 py-1"><Input value={val(row, "reactionPlan") ?? ""} onChange={e => update(row.id, "reactionPlan", e.target.value)} className="h-6 text-xs" placeholder="Reaction..." data-testid={`cp-react-vda-${row.id}`} /></td>
+                        {/* VDA: Responsible */}
+                        <td className="px-1 py-1"><Input value={val(row, "responsiblePerson") ?? ""} onChange={e => update(row.id, "responsiblePerson", e.target.value)} className="h-6 text-xs" placeholder="Name..." data-testid={`cp-resp-${row.id}`} /></td>
+                      </>
+                    )}
                     <td className="px-1 py-1">
                       <div className="flex items-center gap-0.5">
                         {isDirty && (
@@ -711,7 +1137,7 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                   </tr>
                   {expanded && (
                     <tr className="bg-slate-50/70 dark:bg-slate-800/20">
-                      <td colSpan={15} className="px-4 py-3">
+                      <td colSpan={expandColSpan} className="px-4 py-3">
                         {row.reviewFlag && (
                           <ReviewBadge label="Linked PFMEA row was updated — verify control is still appropriate" onClear={() => clearFlagMut.mutate(row.id)} />
                         )}
@@ -722,6 +1148,11 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                               <span className="ml-1 font-medium text-foreground">— {pfmeaRows.find(p => p.id === row.pfmeaRowId)?.failureMode}</span>
                             )}
                           </p>
+                        )}
+                        {cpFormat === "aiag" && (
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            <div><Label className="text-xs text-muted-foreground">Characteristic Name</Label><Input value={val(row, "charName") ?? ""} onChange={e => update(row.id, "charName", e.target.value)} className="h-7 text-xs mt-0.5" placeholder="Characteristic name..." /></div>
+                          </div>
                         )}
                       </td>
                     </tr>
