@@ -61,6 +61,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type EnvAspectImpact, type InsertEnvAspectImpact,
   hazardAnalysis,
   type HazardAnalysisRecord, type InsertHazardAnalysis,
+  docControlSettings,
+  type DocControlSettings, type InsertDocControlSettings,
   complianceCalendarEvents,
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
 } from "@shared/schema";
@@ -557,6 +559,9 @@ export interface IStorage {
   createHazardAnalysisRecord(data: InsertHazardAnalysis): Promise<HazardAnalysisRecord>;
   updateHazardAnalysisRecord(id: number, userId: string, data: Partial<InsertHazardAnalysis>, isSuperadmin?: boolean): Promise<HazardAnalysisRecord | undefined>;
   deleteHazardAnalysisRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  // ── Document Control Settings (Watermarking) ─────────────────────────────
+  getDocControlSettings(userId: string): Promise<DocControlSettings | null>;
+  upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2978,6 +2983,25 @@ export class DatabaseStorage implements IStorage {
   async deleteHazardAnalysisRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const where = isSuperadmin ? eq(hazardAnalysis.id, id) : and(eq(hazardAnalysis.id, id), eq(hazardAnalysis.userId, userId));
     await db.delete(hazardAnalysis).where(where);
+  }
+
+  async getDocControlSettings(userId: string): Promise<DocControlSettings | null> {
+    const [row] = await db.select().from(docControlSettings).where(eq(docControlSettings.userId, userId)).limit(1);
+    return row ?? null;
+  }
+  async upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings> {
+    const existing = await this.getDocControlSettings(userId);
+    if (existing) {
+      const [updated] = await db.update(docControlSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(docControlSettings.userId, userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(docControlSettings)
+      .values({ userId, draftWatermark: false, printWatermark: false, approvedHeaderFooter: false, fingerprint: false, ...data })
+      .returning();
+    return created;
   }
 }
 

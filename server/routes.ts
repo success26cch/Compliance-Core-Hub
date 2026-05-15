@@ -11294,6 +11294,29 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ── Document Control Settings (Watermarking) ─────────────────────────────
+  app.get("/api/doc-control-settings", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const settings = await storage.getDocControlSettings(req.session.userId);
+      res.json(settings ?? { draftWatermark: false, printWatermark: false, approvedHeaderFooter: false, fingerprint: false });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/doc-control-settings", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { draftWatermark, printWatermark, approvedHeaderFooter, fingerprint } = req.body;
+      const updated = await storage.upsertDocControlSettings(req.session.userId, {
+        draftWatermark: !!draftWatermark,
+        printWatermark: !!printWatermark,
+        approvedHeaderFooter: !!approvedHeaderFooter,
+        fingerprint: !!fingerprint,
+      });
+      res.json(updated);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   app.post("/api/iso/hazard-analysis", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     try {

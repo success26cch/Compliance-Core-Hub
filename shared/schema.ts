@@ -3007,3 +3007,17 @@ export const hazardAnalysis = pgTable("hazard_analysis", {
 export const insertHazardAnalysisSchema = createInsertSchema(hazardAnalysis).omit({ id: true, createdAt: true, updatedAt: true });
 export type HazardAnalysisRecord = typeof hazardAnalysis.$inferSelect;
 export type InsertHazardAnalysis = z.infer<typeof insertHazardAnalysisSchema>;
+
+// ─── Document Control Settings (Watermarking) ─────────────────────────────────
+export const docControlSettings = pgTable("doc_control_settings", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  draftWatermark: boolean("draft_watermark").notNull().default(false),
+  printWatermark: boolean("print_watermark").notNull().default(false),
+  approvedHeaderFooter: boolean("approved_header_footer").notNull().default(false),
+  fingerprint: boolean("fingerprint").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertDocControlSettingsSchema = createInsertSchema(docControlSettings).omit({ id: true, updatedAt: true });
+export type DocControlSettings = typeof docControlSettings.$inferSelect;
+export type InsertDocControlSettings = z.infer<typeof insertDocControlSettingsSchema>;
