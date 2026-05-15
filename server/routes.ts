@@ -11317,6 +11317,94 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ── Record Retention Register ──────────────────────────────────────────────
+  app.get("/api/record-retention", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getRecordRetentionRegister(req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/record-retention", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const entry = await storage.createRecordRetentionEntry({ ...req.body, userId: req.session.userId });
+      await storage.createRecordAuditEntry({ userId: req.session.userId, registerId: entry.id, action: "created", performedBy: req.session.userId, details: `Register entry created: ${entry.recordType}` });
+      res.json(entry);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/record-retention/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const entry = await storage.updateRecordRetentionEntry(Number(req.params.id), req.session.userId, req.body);
+      if (!entry) return res.status(404).json({ message: "Not found" });
+      await storage.createRecordAuditEntry({ userId: req.session.userId, registerId: entry.id, action: "modified", performedBy: req.session.userId, details: `Register entry updated: ${entry.recordType}` });
+      res.json(entry);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/record-retention/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.createRecordAuditEntry({ userId: req.session.userId, registerId: Number(req.params.id), action: "deleted", performedBy: req.session.userId, details: `Register entry deleted (id: ${req.params.id})` });
+      await storage.deleteRecordRetentionEntry(Number(req.params.id), req.session.userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ── Record Instances ───────────────────────────────────────────────────────
+  app.get("/api/record-instances", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const registerId = req.query.registerId ? Number(req.query.registerId) : undefined;
+      res.json(await storage.getRecordInstances(req.session.userId, registerId));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.get("/api/record-instances/overdue", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getOverdueRecordInstances(req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/record-instances", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const inst = await storage.createRecordInstance({ ...req.body, userId: req.session.userId });
+      await storage.createRecordAuditEntry({ userId: req.session.userId, instanceId: inst.id, registerId: inst.registerId, action: "created", performedBy: req.session.userId, details: `Record created: ${inst.recordName}` });
+      res.json(inst);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/record-instances/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const inst = await storage.updateRecordInstance(Number(req.params.id), req.session.userId, req.body);
+      if (!inst) return res.status(404).json({ message: "Not found" });
+      const action = req.body.status === "disposed" ? "disposed" : "modified";
+      await storage.createRecordAuditEntry({ userId: req.session.userId, instanceId: inst.id, registerId: inst.registerId, action, performedBy: req.session.userId, details: action === "disposed" ? `Record disposed: ${inst.recordName}` : `Record modified: ${inst.recordName}` });
+      res.json(inst);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/record-instances/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.createRecordAuditEntry({ userId: req.session.userId, instanceId: Number(req.params.id), action: "deleted", performedBy: req.session.userId, details: `Record deleted (id: ${req.params.id})` });
+      await storage.deleteRecordInstance(Number(req.params.id), req.session.userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/record-instances/:id/view", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.createRecordAuditEntry({ userId: req.session.userId, instanceId: Number(req.params.id), action: "viewed", performedBy: req.session.userId, details: req.body.recordName ? `Record viewed: ${req.body.recordName}` : "Record viewed" });
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ── Record Audit Trail ─────────────────────────────────────────────────────
+  app.get("/api/record-audit-trail", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const instanceId = req.query.instanceId ? Number(req.query.instanceId) : undefined;
+      res.json(await storage.getRecordAuditTrail(req.session.userId, instanceId));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   app.post("/api/iso/hazard-analysis", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     try {

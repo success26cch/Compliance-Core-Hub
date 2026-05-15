@@ -3008,6 +3008,65 @@ export const insertHazardAnalysisSchema = createInsertSchema(hazardAnalysis).omi
 export type HazardAnalysisRecord = typeof hazardAnalysis.$inferSelect;
 export type InsertHazardAnalysis = z.infer<typeof insertHazardAnalysisSchema>;
 
+// ─── Record Retention Register (Clause 7.5.3) ─────────────────────────────────
+export const recordRetentionRegister = pgTable("record_retention_register", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  recordType: text("record_type").notNull(),
+  retentionPeriod: text("retention_period").notNull(),
+  retentionDays: integer("retention_days"),
+  storageLocation: text("storage_location"),
+  protectionMethod: text("protection_method"),
+  disposalMethod: text("disposal_method"),
+  confidentiality: text("confidentiality").notNull().default("general"),
+  applicableStandards: text("applicable_standards").array().default([]),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertRecordRetentionRegisterSchema = createInsertSchema(recordRetentionRegister).omit({ id: true, createdAt: true, updatedAt: true });
+export type RecordRetentionEntry = typeof recordRetentionRegister.$inferSelect;
+export type InsertRecordRetentionEntry = z.infer<typeof insertRecordRetentionRegisterSchema>;
+
+// ─── Record Instances (digital + physical) ────────────────────────────────────
+export const recordInstances = pgTable("record_instances", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  registerId: integer("register_id").notNull(),
+  recordName: text("record_name").notNull(),
+  description: text("description"),
+  medium: text("medium").notNull().default("digital"),
+  physicalLocation: text("physical_location"),
+  storageRef: text("storage_ref"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  uploadedBy: text("uploaded_by"),
+  disposalDueDate: timestamp("disposal_due_date"),
+  status: text("status").notNull().default("active"),
+  disposedAt: timestamp("disposed_at"),
+  disposedBy: text("disposed_by"),
+  disposalNotes: text("disposal_notes"),
+  isoProjectId: integer("iso_project_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertRecordInstanceSchema = createInsertSchema(recordInstances).omit({ id: true, createdAt: true });
+export type RecordInstance = typeof recordInstances.$inferSelect;
+export type InsertRecordInstance = z.infer<typeof insertRecordInstanceSchema>;
+
+// ─── Record Audit Trail ────────────────────────────────────────────────────────
+export const recordAuditTrail = pgTable("record_audit_trail", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  instanceId: integer("instance_id"),
+  registerId: integer("register_id"),
+  action: text("action").notNull(),
+  performedBy: text("performed_by"),
+  details: text("details"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+export const insertRecordAuditTrailSchema = createInsertSchema(recordAuditTrail).omit({ id: true, timestamp: true });
+export type RecordAuditEntry = typeof recordAuditTrail.$inferSelect;
+export type InsertRecordAuditEntry = z.infer<typeof insertRecordAuditTrailSchema>;
+
 // ─── Document Control Settings (Watermarking) ─────────────────────────────────
 export const docControlSettings = pgTable("doc_control_settings", {
   id: serial("id").primaryKey(),

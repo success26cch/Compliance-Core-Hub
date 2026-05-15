@@ -63,6 +63,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type HazardAnalysisRecord, type InsertHazardAnalysis,
   docControlSettings,
   type DocControlSettings, type InsertDocControlSettings,
+  recordRetentionRegister, recordInstances, recordAuditTrail,
+  type RecordRetentionEntry, type InsertRecordRetentionEntry,
+  type RecordInstance, type InsertRecordInstance,
+  type RecordAuditEntry, type InsertRecordAuditEntry,
   complianceCalendarEvents,
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
 } from "@shared/schema";
@@ -562,6 +566,23 @@ export interface IStorage {
   // ── Document Control Settings (Watermarking) ─────────────────────────────
   getDocControlSettings(userId: string): Promise<DocControlSettings | null>;
   upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings>;
+
+  // Record Retention Register
+  getRecordRetentionRegister(userId: string): Promise<RecordRetentionEntry[]>;
+  createRecordRetentionEntry(data: InsertRecordRetentionEntry): Promise<RecordRetentionEntry>;
+  updateRecordRetentionEntry(id: number, userId: string, data: Partial<InsertRecordRetentionEntry>): Promise<RecordRetentionEntry | null>;
+  deleteRecordRetentionEntry(id: number, userId: string): Promise<void>;
+
+  // Record Instances
+  getRecordInstances(userId: string, registerId?: number): Promise<RecordInstance[]>;
+  getOverdueRecordInstances(userId: string): Promise<RecordInstance[]>;
+  createRecordInstance(data: InsertRecordInstance): Promise<RecordInstance>;
+  updateRecordInstance(id: number, userId: string, data: Partial<InsertRecordInstance>): Promise<RecordInstance | null>;
+  deleteRecordInstance(id: number, userId: string): Promise<void>;
+
+  // Record Audit Trail
+  getRecordAuditTrail(userId: string, instanceId?: number): Promise<RecordAuditEntry[]>;
+  createRecordAuditEntry(data: InsertRecordAuditEntry): Promise<RecordAuditEntry>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2988,6 +3009,69 @@ export class DatabaseStorage implements IStorage {
   async getDocControlSettings(userId: string): Promise<DocControlSettings | null> {
     const [row] = await db.select().from(docControlSettings).where(eq(docControlSettings.userId, userId)).limit(1);
     return row ?? null;
+  }
+
+  // ── Record Retention Register ──────────────────────────────────────────────
+  async getRecordRetentionRegister(userId: string): Promise<RecordRetentionEntry[]> {
+    return db.select().from(recordRetentionRegister).where(eq(recordRetentionRegister.userId, userId)).orderBy(asc(recordRetentionRegister.recordType));
+  }
+  async createRecordRetentionEntry(data: InsertRecordRetentionEntry): Promise<RecordRetentionEntry> {
+    const [row] = await db.insert(recordRetentionRegister).values(data).returning();
+    return row;
+  }
+  async updateRecordRetentionEntry(id: number, userId: string, data: Partial<InsertRecordRetentionEntry>): Promise<RecordRetentionEntry | null> {
+    const [row] = await db.update(recordRetentionRegister)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(recordRetentionRegister.id, id), eq(recordRetentionRegister.userId, userId)))
+      .returning();
+    return row ?? null;
+  }
+  async deleteRecordRetentionEntry(id: number, userId: string): Promise<void> {
+    await db.delete(recordRetentionRegister).where(and(eq(recordRetentionRegister.id, id), eq(recordRetentionRegister.userId, userId)));
+  }
+
+  // ── Record Instances ───────────────────────────────────────────────────────
+  async getRecordInstances(userId: string, registerId?: number): Promise<RecordInstance[]> {
+    const conditions = registerId
+      ? and(eq(recordInstances.userId, userId), eq(recordInstances.registerId, registerId))
+      : eq(recordInstances.userId, userId);
+    return db.select().from(recordInstances).where(conditions).orderBy(desc(recordInstances.createdAt));
+  }
+  async getOverdueRecordInstances(userId: string): Promise<RecordInstance[]> {
+    const now = new Date();
+    return db.select().from(recordInstances).where(
+      and(
+        eq(recordInstances.userId, userId),
+        eq(recordInstances.status, "active"),
+        lte(recordInstances.disposalDueDate, now)
+      )
+    ).orderBy(asc(recordInstances.disposalDueDate));
+  }
+  async createRecordInstance(data: InsertRecordInstance): Promise<RecordInstance> {
+    const [row] = await db.insert(recordInstances).values(data).returning();
+    return row;
+  }
+  async updateRecordInstance(id: number, userId: string, data: Partial<InsertRecordInstance>): Promise<RecordInstance | null> {
+    const [row] = await db.update(recordInstances)
+      .set(data)
+      .where(and(eq(recordInstances.id, id), eq(recordInstances.userId, userId)))
+      .returning();
+    return row ?? null;
+  }
+  async deleteRecordInstance(id: number, userId: string): Promise<void> {
+    await db.delete(recordInstances).where(and(eq(recordInstances.id, id), eq(recordInstances.userId, userId)));
+  }
+
+  // ── Record Audit Trail ─────────────────────────────────────────────────────
+  async getRecordAuditTrail(userId: string, instanceId?: number): Promise<RecordAuditEntry[]> {
+    const conditions = instanceId
+      ? and(eq(recordAuditTrail.userId, userId), eq(recordAuditTrail.instanceId, instanceId))
+      : eq(recordAuditTrail.userId, userId);
+    return db.select().from(recordAuditTrail).where(conditions).orderBy(desc(recordAuditTrail.timestamp)).limit(500);
+  }
+  async createRecordAuditEntry(data: InsertRecordAuditEntry): Promise<RecordAuditEntry> {
+    const [row] = await db.insert(recordAuditTrail).values(data).returning();
+    return row;
   }
   async upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings> {
     const existing = await this.getDocControlSettings(userId);

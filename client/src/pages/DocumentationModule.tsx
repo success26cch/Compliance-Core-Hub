@@ -48,6 +48,7 @@ import {
   AlertTriangle,
   XCircle,
   Download,
+  FileBadge,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RecordControlTab from "./RecordControlTab";
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -1510,6 +1512,9 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
             <TabsTrigger value="change_log" className="text-xs h-7 px-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5" data-testid="tab-change-log">
               <ScrollText className="w-3 h-3" /> Change Log
             </TabsTrigger>
+            <TabsTrigger value="record_control" className="text-xs h-7 px-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5" data-testid="tab-record-control">
+              <FileBadge className="w-3 h-3" /> Record Control
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -1528,6 +1533,8 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
         <MasterDocumentList documents={documents ?? []} project={project ?? null} isLoading={isLoading} complianceResults={complianceResults} />
       ) : activeTab === "change_log" ? (
         <ChangeControlLog documents={documents ?? []} isoProjectId={(project as any)?.id ?? null} />
+      ) : activeTab === "record_control" ? (
+        <RecordControlTab />
       ) : isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Loading documents...</p>
