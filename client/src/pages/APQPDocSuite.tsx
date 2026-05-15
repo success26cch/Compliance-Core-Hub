@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -561,24 +561,50 @@ function PfmeaTab({ projectId }: { projectId: number }) {
     failureCause: string; occurrence: number; preventionControl: string;
     detectionControl: string; detection: number; recommendedAction: string;
   };
-  const WIZARD_INDUSTRIES = [
-    { value: "chemical_processing", label: "Chemical Processing & Blending" },
-    { value: "automotive_assembly", label: "Automotive Assembly" },
-    { value: "medical_device", label: "Medical Device (ISO 13485)" },
-    { value: "food_beverage", label: "Food & Beverage (HACCP)" },
-    { value: "electronics_pcb", label: "Electronics / PCB Assembly" },
-    { value: "pharmaceutical", label: "Pharmaceutical (cGMP)" },
-    { value: "aerospace", label: "Aerospace & Defense (AS9100)" },
-    { value: "metal_stamping", label: "Metal Stamping & Forming" },
-    { value: "casting_foundry", label: "Casting & Foundry" },
-    { value: "plastics_molding", label: "Plastics Injection Molding" },
-    { value: "oil_gas", label: "Oil & Gas Processing" },
-    { value: "rubber_composites", label: "Rubber & Composites" },
-    { value: "general_manufacturing", label: "General Manufacturing" },
+  const WIZARD_INDUSTRY_GROUPS = [
+    {
+      group: "Automotive Manufacturing",
+      industries: [
+        { value: "cnc_machining_auto",        label: "CNC Machining" },
+        { value: "injection_molding_auto",    label: "Injection Molding" },
+        { value: "automotive_painting",       label: "Painting & Surface Coating (E-coat, Topcoat)" },
+        { value: "metal_stamping_fab",        label: "Metal Stamping & Fabrication" },
+        { value: "electronics_assembly_auto", label: "Electronics Assembly (PCBA / ECU / Wire Harness)" },
+        { value: "chemical_processing_auto",  label: "Chemical Processing (Fluids, Adhesives, Sealants)" },
+        { value: "automotive_assembly",       label: "General Assembly & Sequencing" },
+      ],
+    },
+    {
+      group: "Steel Processing",
+      industries: [
+        { value: "steel_slitting",          label: "Slitting (Coil-to-Coil, Oscillate Wind)" },
+        { value: "steel_blanking",          label: "Blanking & Shearing (Rotary Die, Laser Blank)" },
+        { value: "steel_rolling_annealing", label: "Rolling & Annealing (Hot Roll, Cold Roll, CAL)" },
+        { value: "steel_pickling_galv",     label: "Pickling & Galvanizing (HCl Pickle, Hot-Dip, EGL)" },
+        { value: "steel_processing",        label: "General Steel Processing" },
+      ],
+    },
+    {
+      group: "Other Industries",
+      industries: [
+        { value: "casting_foundry",      label: "Casting & Foundry (Die Cast, Sand Cast)" },
+        { value: "plastics_molding",     label: "Plastics Injection / Blow Molding" },
+        { value: "rubber_composites",    label: "Rubber & Composites" },
+        { value: "chemical_processing",  label: "Chemical Processing & Blending" },
+        { value: "medical_device",       label: "Medical Device (ISO 13485)" },
+        { value: "food_beverage",        label: "Food & Beverage (HACCP / SQF)" },
+        { value: "electronics_pcb",      label: "Electronics / PCB Assembly (SMT, Wave Solder)" },
+        { value: "pharmaceutical",       label: "Pharmaceutical (cGMP / 21 CFR 211)" },
+        { value: "aerospace",            label: "Aerospace & Defense (AS9100 / NADCAP)" },
+        { value: "oil_gas",              label: "Oil & Gas Processing" },
+        { value: "metal_stamping",       label: "Metal Stamping & Forming (General)" },
+        { value: "general_manufacturing",label: "General Manufacturing" },
+      ],
+    },
   ];
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<1|2|3>(1);
-  const [wizardIndustry, setWizardIndustry] = useState("chemical_processing");
+  const [wizardIndustry, setWizardIndustry] = useState("cnc_machining_auto");
   const [wizardStepSel, setWizardStepSel] = useState("__manual__");
   const [wizardManualStep, setWizardManualStep] = useState("");
   const [wizardFunction, setWizardFunction] = useState("");
@@ -1094,13 +1120,18 @@ ${rows.map(row => {
                     <SelectTrigger className="h-9 text-sm" data-testid="wizard-industry-select">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      {WIZARD_INDUSTRIES.map(i => (
-                        <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                    <SelectContent className="max-h-72">
+                      {WIZARD_INDUSTRY_GROUPS.map(grp => (
+                        <SelectGroup key={grp.group}>
+                          <SelectLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1.5 bg-muted/40">{grp.group}</SelectLabel>
+                          {grp.industries.map(i => (
+                            <SelectItem key={i.value} value={i.value} className="pl-4">{i.label}</SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">Corey tailors failure modes and controls to your industry's equipment, materials, and regulations.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Corey tailors failure modes, controls, and AIAG ratings to your sector's specific equipment, materials, and standards.</p>
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs font-semibold mb-1 block">Process Step</Label>

@@ -11387,31 +11387,75 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
       const anthropic = createAnthropicClient();
 
       const industryLabels: Record<string, string> = {
-        chemical_processing: "Chemical Processing & Blending",
-        automotive_assembly: "Automotive Assembly & Sequencing",
-        medical_device: "Medical Device Manufacturing (ISO 13485)",
-        food_beverage: "Food & Beverage Processing (HACCP)",
-        electronics_pcb: "Electronics / PCB Assembly",
-        pharmaceutical: "Pharmaceutical Manufacturing (cGMP)",
-        aerospace: "Aerospace & Defense (AS9100)",
-        metal_stamping: "Metal Stamping & Forming",
-        casting_foundry: "Casting & Foundry Operations",
-        plastics_molding: "Plastics Injection / Blow Molding",
-        oil_gas: "Oil & Gas Processing",
-        rubber_composites: "Rubber & Composites Manufacturing",
-        general_manufacturing: "General Manufacturing",
+        // ── Automotive Manufacturing sub-sectors ──────────────────────────────
+        cnc_machining_auto:        "CNC Machining (Automotive — Turning, Milling, Drilling, Grinding)",
+        injection_molding_auto:    "Injection Molding (Automotive Plastic Components)",
+        automotive_painting:       "Automotive Painting & Surface Coating (E-coat, Primer, Topcoat, Clear Coat)",
+        metal_stamping_fab:        "Metal Stamping & Fabrication (Automotive — Progressive Die, Transfer, Fine Blanking)",
+        electronics_assembly_auto: "Electronics Assembly for Automotive (PCBA, ECU, Wire Harness, SMT/THT Soldering)",
+        chemical_processing_auto:  "Chemical Processing for Automotive (Coolants, Adhesives, Sealants, Lubricants, Fluids)",
+        automotive_assembly:       "Automotive General Assembly & Sequencing (Body-in-White, Final Line, Sub-Assembly)",
+        // ── Steel Processing ─────────────────────────────────────────────────
+        steel_slitting:            "Steel Slitting (Coil-to-Coil, Oscillate Wind, Log Rewind)",
+        steel_blanking:            "Steel Blanking & Shearing (Rotary Die, Progressive Blanking, Laser Blanking)",
+        steel_rolling_annealing:   "Steel Rolling & Annealing (Hot Roll, Cold Roll, Continuous Annealing, Batch Anneal)",
+        steel_pickling_galv:       "Steel Pickling, Galvanizing & Surface Coating (HCl Pickle, Hot-Dip Galv, Electro-Galv, Temper Mill)",
+        steel_processing:          "Steel Processing — General (Forming, Finishing, Inspection, Packaging)",
+        // ── Other Industries ──────────────────────────────────────────────────
+        chemical_processing:       "Chemical Processing & Blending",
+        medical_device:            "Medical Device Manufacturing (ISO 13485)",
+        food_beverage:             "Food & Beverage Processing (HACCP / SQF)",
+        electronics_pcb:           "Electronics / PCB Assembly (SMT, Wave Solder, AOI, ICT)",
+        pharmaceutical:            "Pharmaceutical Manufacturing (cGMP / 21 CFR Part 211)",
+        aerospace:                 "Aerospace & Defense (AS9100 / NADCAP)",
+        metal_stamping:            "Metal Stamping & Forming (General)",
+        casting_foundry:           "Casting & Foundry Operations (Die Cast, Sand Cast, Investment Cast)",
+        plastics_molding:          "Plastics Injection / Blow Molding",
+        oil_gas:                   "Oil & Gas Processing",
+        rubber_composites:         "Rubber & Composites Manufacturing",
+        general_manufacturing:     "General Manufacturing",
       };
 
       const industryLabel = industryLabels[industry as string] ?? String(industry ?? "General Manufacturing");
+
+      // Build rich, sector-specific guidance for the prompt
+      const industryGuidance: Record<string, string> = {
+        cnc_machining_auto: `CNC MACHINING (AUTOMOTIVE) — key failure modes include: dimensional out-of-tolerance (bore diameter, thread pitch, runout, perpendicularity, surface finish Ra), tool wear/breakage (insert chipping, drill walk, tap breakage), wrong fixture setup or datum shift, coolant contamination of finished bore, burr left at cross-hole, chip re-cut damage, incorrect part number loaded in CNC program, probe calibration error leading to false accept. Equipment: CNC turning centers, machining centers (Mazak, Fanuc, DMG Mori), CMM (Zeiss, Hexagon), in-process gauging, SPC stations. Customer-specific requirements: AIAG MSA, PPAP dimensional studies, Cpk ≥ 1.67 for CCs.`,
+        injection_molding_auto: `INJECTION MOLDING (AUTOMOTIVE) — key failure modes include: sink marks, weld lines, warpage/distortion, short shots, flash at parting line, incorrect wall thickness, dimensional non-conformance (snap-fit, boss height, clip retention force), contamination (color streaks, black specks, moisture voids), gate vestige out-of-spec, insert misplacement/migration, surface cosmetic defects (silver streaking, jetting, burn marks), incorrect material lot/resin mix ratio, mold temperature excursion. Equipment: injection presses (Husky, Engel, KraussMaffei), hot runner systems, chillers, desiccant dryers, vision systems, CMM, pull-test fixtures. Standards: IATF 16949, customer-specific (GM BIQS, Ford Q1, Stellantis SQ).`,
+        automotive_painting: `AUTOMOTIVE PAINTING & SURFACE COATING — key failure modes include: film build out-of-spec (low/high DFT), poor adhesion (cross-hatch test failure), orange peel/texture deviation, solvent pop or pinholing, color/gloss mismatch (ΔE > tolerance), runs/sags/drips, dirt/contaminant inclusion, E-coat bath chemistry out-of-spec (pH, conductivity, bath solids), bake oven temperature excursion (under-cure → adhesion loss; over-cure → brittleness), corrosion protection failure (salt spray test), improper substrate prep (iron phosphate, zinc phosphate, degreaser concentration). Equipment: E-coat tanks, spray booths, oven/cure systems, thickness gauges (Elcometer), salt spray chambers, cross-hatch adhesion test kits.`,
+        metal_stamping_fab: `METAL STAMPING & FABRICATION (AUTOMOTIVE) — key failure modes include: dimensional non-conformance (hole location, trim edge, flange angle, springback), burr height exceeding specification, die wear (thinning of punch tip, die radius wear), material grain flow / metal stretching beyond FLD (Forming Limit Diagram), cracks/splits at radius, wrinkle in draw panels, improper blank size/weight, coil material hardness out-of-spec (HRC variation), lubricant starvation/over-application, incorrect die setup (shut height, press tonnage, feed advance), tool breakage, incorrect part orientation, skip-feed / double-blank detection failure. Equipment: mechanical/hydraulic presses, progressive dies, transfer dies, servo-feed lines, optical die protection, vision systems, coordinate measuring arm.`,
+        electronics_assembly_auto: `ELECTRONICS ASSEMBLY (AUTOMOTIVE PCBA/ECU/HARNESS) — key failure modes include: solder joint defect (bridging, cold solder, tombstoning, insufficient solder), component missing/wrong value/orientation (polarity reversal), PCB contamination (flux residue, ionic contamination), conformal coating skip or delamination, wire crimp defect (pull-out force low, crimp height OOT), connector mis-mate or incomplete seat, BGA voiding / head-in-pillow, thermal interface material mis-application, solder paste volume deviation (SPI), AOI false escape, ICT bed-of-nails probe contact failure, ESD damage, label missing/illegible/incorrect barcode. Standards: IPC-A-610 Class 3 (automotive), AEC-Q100/Q200, USCAR-2, customer-specific (GM, Ford, Stellantis). Equipment: SMT line (printer, pick-and-place, reflow oven), wave solder, AOI, AXI, ICT, functional tester.`,
+        chemical_processing_auto: `CHEMICAL PROCESSING (AUTOMOTIVE — FLUIDS, ADHESIVES, SEALANTS, LUBRICANTS) — key failure modes include: concentration out-of-spec (inhibitor depletion, boiling point shift, corrosion protection failure), contamination (cross-mix of product types, particulate, water ingress), incorrect additive ratio (anti-freeze, anti-corrosion package), pH drift / conductivity deviation, viscosity out-of-tolerance (adhesive squeeze-out, improper bead height), cure time deviation (insufficient cross-link density), substrate incompatibility, incorrect fill volume, label/packaging mismatch, batch traceability gap, shelf-life exceedance, wrong sealant applied to safety-critical joint. Equipment: mixing vessels, metering pumps, viscometers, pH meters, titration stations, bead dispensers (Nordson, Graco), torque test fixtures.`,
+        automotive_assembly: `AUTOMOTIVE GENERAL ASSEMBLY — key failure modes include: fastener torque/angle under-/over-spec (missing torque record, air tool calibration), missing component (clip, bolt, gasket, seal), incorrect part installed (wrong revision, wrong color/configuration), incorrect assembly sequence, gap/flush OOT on body panels, electrical connector not fully seated (CPA not locked), fluid leak (coolant, brake, fuel), incorrect torque strategy (prevailing torque nuts), misaligned sub-assembly, station bypass (process step skipped), poka-yoke (error-proofing device) defeat, improper adhesive / sealant application. Standards: IATF 16949, customer-specific (BIQS, Ford Q1, Stellantis Class A).`,
+        steel_slitting: `STEEL SLITTING — key failure modes include: slit width out-of-tolerance (coil width, edge camber), burr height exceeding specification (> 10% material thickness), edge wave / crossbow deformation, lap or telescope on rewind (loose/tight coil), coil ID/OD collapse, wrong slit pattern (incorrect arbor setup, missing spacer), knife wear/chip producing poor edge quality, tension variation causing gauge variation through the slit, incorrect material identification (heat number, grade, thickness, coating weight), label / tag error on finished coil, coil marker/paint stripe misapplication. Equipment: slitting lines (looping pit, slitter head, recoiler), digital caliper, burr gauge (Starrett), edge wave detector, coil ID system.`,
+        steel_blanking: `STEEL BLANKING & SHEARING — key failure modes include: blank dimension out-of-tolerance (length, width, diagonal, hole location), burr height/rollover exceeding specification, die rollover affecting part flatness, blank camber/bow, incorrect blank weight (affecting downstream forming), double blank passed to press (double-blank detection failure), edge crack or fracture at shear zone, incorrect material grade/thickness loaded, tool wear (punch clearance increase → larger burr), laser blanking path deviation, nesting efficiency error causing material waste flag, part marking/identification absent or incorrect. Equipment: blanking presses, laser blankers (Schuler, Trumpf), double-blank detectors, CMM/optical flat measurement, weight scales.`,
+        steel_rolling_annealing: `STEEL ROLLING & ANNEALING — key failure modes include: gauge out-of-tolerance (thickness variation, crown/wedge profile), surface defect (roll marks, scratches, scale pits, laps, seams, rolled-in scale), mechanical properties OOT (yield strength, tensile strength, elongation — under-anneal → too hard; over-anneal → too soft), improper coiling tension (tight wrap → shape defect; loose → telescope), flatness defect (edge wave, center buckle, quarter buckle), coil weld break / strip break, temper rolling reduction OOT (surface roughness Ra, yield point elongation), incorrect annealing temperature profile (soak time, ramp rate), coil identity mixup (grade, heat number swap), surface roughness Ra OOT, residual stress → shape change in subsequent stamping. Equipment: tandem cold mills, continuous annealing lines (CAL), batch annealing furnaces, temper mills, shape meters, X-ray gauge.`,
+        steel_pickling_galv: `STEEL PICKLING & GALVANIZING — key failure modes include: pickling under-treatment (residual scale → adhesion failure in galvanizing or paint), over-pickling (hydrogen embrittlement, pitting), HCl bath concentration out-of-spec (iron content, inhibitor level), zinc coating weight out-of-tolerance (g/m² low → corrosion; high → poor weldability / stamping crack), bath temperature excursion (cold → bare spots; hot → zinc dross), spangle size / surface appearance OOT (customer cosmetic requirement), bare spots / holidays in zinc coat, passivation / oiling rate deviation, temper mill elongation OOT post-galvanizing, skin pass causing yield point elongation issue, coating adhesion failure (bend test, 0T bend, crosshatch). Equipment: continuous pickling line, hot-dip galvanizing line (DGL), electro-galvanizing line (EGL), zinc pot, coating weight gauge (X-ray fluorescence), bend testers.`,
+        steel_processing: `STEEL PROCESSING (GENERAL) — key failure modes include: dimensional non-conformance (width, thickness, length, flatness), surface quality defect (scratches, scale, oil contamination), material property deviation (hardness, tensile, yield, elongation), coil/bundle identity error (heat number, grade, coating weight mismatch), incorrect processing parameters (speed, tension, temperature), coil damage in handling/transport, residual stress causing downstream forming issues, weld quality failure at coil join, SPC control chart out-of-control signal not acted upon, certification (MTR) discrepancy vs. actual material.`,
+        chemical_processing: `CHEMICAL PROCESSING — key failure modes include: concentration out-of-spec, contamination, inhibitor depletion, pH drift, batch cross-contamination, seal failure, wrong reagent addition, temperature excursion, metering pump calibration error, incorrect batch size.`,
+        medical_device: `MEDICAL DEVICE — key failure modes include: sterility breach, labeling error, incorrect assembly, biocompatibility failure, traceability gap, particle contamination, dimensional non-conformance of critical features.`,
+        food_beverage: `FOOD & BEVERAGE — key failure modes include: foreign material (metal, glass, plastic), allergen cross-contact, microbial contamination (Listeria, Salmonella, E. coli), CCP (Critical Control Point) deviation, label error (undeclared allergen), fill weight out-of-spec, temperature abuse in pasteurization/chilling, sanitizer residue.`,
+        electronics_pcb: `ELECTRONICS/PCB — key failure modes include: solder bridging, cold solder joint, missing component, wrong value/orientation, PCB contamination, BGA voiding, thermal pad misalignment, conformal coating skip, ESD damage, AOI false escape.`,
+        pharmaceutical: `PHARMACEUTICAL — key failure modes include: assay out-of-specification, blend uniformity failure, tablet hardness/friability OOT, dissolution failure, contamination (cross-contamination, microbial, particulate), label/packaging error, temperature excursion in stability, incorrect API lot used.`,
+        aerospace: `AEROSPACE — key failure modes include: dimensional non-conformance of fatigue-critical features, NDT escape, material certification error, torque/installation error on safety-critical fasteners, surface treatment deviation, FOD (Foreign Object Debris), first-article inspection failure, traceability/serialization gap.`,
+        metal_stamping: `METAL STAMPING — key failure modes include: dimensional non-conformance, burr height OOT, splits/cracks at radius, springback deviation, die wear, coil material hardness variation, lubricant starvation, incorrect die setup, double-blank, wrong part orientation.`,
+        casting_foundry: `CASTING & FOUNDRY — key failure modes include: porosity (gas, shrinkage), inclusion (sand, slag, oxide), dimensional non-conformance, cold shut, misrun, incorrect alloy chemistry, heat treatment deviation, leak test failure, machining allowance insufficient.`,
+        plastics_molding: `PLASTICS MOLDING — key failure modes include: warpage/distortion, sink marks, weld lines, short shots, flash, contamination (color, black specks), incorrect material, gate vestige OOT, incorrect wall thickness, snap-fit retention force low.`,
+        oil_gas: `OIL & GAS — key failure modes include: seal/gasket failure → leak, pressure vessel over-pressure, corrosion under insulation, valve seat wear, instrument calibration drift, incorrect chemical injection rate, personnel safety incident (H2S exposure, hydrocarbon release).`,
+        rubber_composites: `RUBBER & COMPOSITES — key failure modes include: dimensional non-conformance (cross-section, durometer), cure time/temperature deviation (under-cure → low strength; over-cure → brittleness), delamination, void/porosity in composite layup, incorrect fiber orientation, adhesion failure at bonded joint, compression set OOT.`,
+        general_manufacturing: `GENERAL MANUFACTURING — key failure modes: dimensional non-conformance, surface defect, incorrect material/part number, missing operation, improper tool/fixture setup, measurement system error, traceability failure, labeling error.`,
+      };
+
+      const sectorGuidance = industryGuidance[industry as string] ?? industryGuidance["general_manufacturing"];
 
       const prompt = `You are a Senior Process FMEA Engineer with deep expertise in ${industryLabel}, fully trained in the AIAG & VDA FMEA Handbook (2019). Your task is to identify potential failure modes for a specific process step.
 
 PROCESS STEP: ${processStep}
 PROCESS FUNCTION / DESCRIPTION: ${processFunction || "(not provided)"}
 STEP TYPE: ${operationType}
-INDUSTRY: ${industryLabel}
+INDUSTRY / SECTOR: ${industryLabel}
 
-Generate 6–8 realistic, industry-specific potential failure modes for this process step. Every failure mode must reflect genuine failure scenarios encountered in ${industryLabel} operations — use correct technical terminology, equipment names, material names, and failure mechanisms for this industry.
+Generate 6–8 realistic, industry-specific potential failure modes for this process step. Every failure mode must reflect genuine failure scenarios encountered in ${industryLabel} operations — use correct technical terminology, equipment names, material names, and failure mechanisms for this sector.
 
 Return ONLY a valid JSON object — no markdown fences, no explanation text, just the JSON:
 {
@@ -11423,8 +11467,8 @@ Return ONLY a valid JSON object — no markdown fences, no explanation text, jus
       "classification": "CC or KPC or SC or empty string",
       "failureCause": "Root mechanism — specify material, method, machine, measurement, environment or people cause",
       "occurrence": 4,
-      "preventionControl": "Existing or recommended prevention control for this industry",
-      "detectionControl": "Existing or recommended detection control for this industry",
+      "preventionControl": "Existing or recommended prevention control specific to this sector",
+      "detectionControl": "Existing or recommended detection control specific to this sector",
       "detection": 5,
       "recommendedAction": "Specific, actionable AIAG-style recommended action"
     }
@@ -11437,10 +11481,8 @@ AIAG & VDA 2019 SCORING RULES:
 - Detection 9–10: no known detection method / defect not detectable; 6–8: unlikely to detect before reaching customer; 3–5: moderate chance of detection; 1–2: near-certain detection before shipment
 - Classification: CC = Critical Characteristic (safety/regulatory, severity ≥ 9); KPC = Key Product Characteristic (key functional, severity 7–8 or customer-designated); SC = Significant Characteristic; blank = standard
 
-Use ${industryLabel}-specific language throughout. Industry-specific examples:
-- Chemical processing: concentration out-of-spec, contamination, inhibitor depletion, pH drift, batch cross-contamination, seal failure, wrong reagent addition
-- Automotive: dimensional non-conformance, fastener torque error, missing component, incorrect station sequence, weld spatter contamination
-- Medical device: sterility breach, labeling error, incorrect assembly, biocompatibility failure, traceability gap`;
+SECTOR-SPECIFIC TECHNICAL CONTEXT (use this terminology and these failure types):
+${sectorGuidance}`;
 
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-5",
