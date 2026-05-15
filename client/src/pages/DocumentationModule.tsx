@@ -3805,7 +3805,7 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-black text-primary flex items-center gap-2"><List className="w-4 h-4" /> Master Document List</h2>
+          <h2 className="text-xl font-black text-primary flex items-center gap-2"><List className="w-5 h-5" /> Master Document List</h2>
           <p className="text-xs text-muted-foreground">ISO 7.5 — All controlled documents with current revision status</p>
         </div>
         <Button
@@ -4100,7 +4100,7 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-black text-primary flex items-center gap-2"><ScrollText className="w-4 h-4" /> Change Control Log</h2>
+          <h2 className="text-xl font-black text-primary flex items-center gap-2"><ScrollText className="w-5 h-5" /> Change Control Log</h2>
           <p className="text-xs text-muted-foreground">ISO 7.5.3 — Chronological record of all document changes</p>
         </div>
       </div>
