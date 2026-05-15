@@ -242,7 +242,7 @@ function printIsoDocument(doc: IsoDocument, project: IsoProject | null, wmOpts?:
   });
   const docTypeLbl = doc.docType?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) ?? "Document";
   const isApproved = doc.status === "approved";
-  const showCenterWatermark = wmOpts?.printWatermark && !isApproved;
+  const showCenterWatermark = !!wmOpts?.printWatermark;
   const showApprovedHF = wmOpts?.approvedHeaderFooter && isApproved;
   const showPrintMark = wmOpts?.printWatermark;
   const showFingerprint = wmOpts?.fingerprint;
