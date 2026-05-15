@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, Loader2, AlertTriangle, CheckCircle, ChevronDown, ChevronRight,
   ArrowDown, Cog, Eye, Truck, Clock, Archive, ClipboardList, Layers, FileText,
-  Download, RefreshCw, X, Check, GitFork, Printer, Sparkles, Wand2,
+  Download, RefreshCw, X, Check, GitFork, Printer, Sparkles, Wand2, ExternalLink,
+  PackageCheck,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -24,7 +25,7 @@ import type {
 
 // ─── Types & Helpers ─────────────────────────────────────────────────────────
 
-type DocSuiteTab = "pfd" | "pfmea" | "control_plan" | "inspection";
+type DocSuiteTab = "ppap_elements" | "pfd" | "pfmea" | "control_plan" | "inspection";
 
 const STEP_TYPES = [
   { value: "operation", label: "Operation", icon: Cog, color: "text-blue-600" },
@@ -2096,13 +2097,254 @@ function InspectionTab({ projectId, project }: { projectId: number; project: { p
   );
 }
 
+// ─── PPAP Elements Tab ────────────────────────────────────────────────────────
+
+const PPAP_ELEMENTS = [
+  { num: 1,  name: "Design Records",                       cat: "Design",         hint: "Drawings, CAD models, GD&T specifications",                    builtIn: null },
+  { num: 2,  name: "Engineering Change Documents",         cat: "Design",         hint: "ECNs, deviation requests, engineering change notices",          builtIn: null },
+  { num: 3,  name: "Customer Engineering Approval",        cat: "Design",         hint: "Signed customer approval for design deviations",               builtIn: null },
+  { num: 4,  name: "Design FMEA (DFMEA)",                  cat: "Design",         hint: "Design-level FMEA (if design-responsible supplier)",           builtIn: null },
+  { num: 5,  name: "Process Flow Diagrams",                cat: "Manufacturing",  hint: "AIAG-symbol PFD covering the entire manufacturing process",    builtIn: "pfd" },
+  { num: 6,  name: "Process FMEA (PFMEA)",                 cat: "Manufacturing",  hint: "AIAG & VDA 2019 PFMEA — S×O×D RPN with controls",             builtIn: "pfmea" },
+  { num: 7,  name: "Control Plan",                         cat: "Manufacturing",  hint: "AIAG Control Plan — Pre-launch and Production",               builtIn: "control_plan" },
+  { num: 8,  name: "Measurement System Analysis (MSA)",    cat: "Quality",        hint: "Gage R&R studies per AIAG MSA Manual 4th Edition",            builtIn: null },
+  { num: 9,  name: "Dimensional Results",                  cat: "Quality",        hint: "Dimensional layout report — ballooned drawing + measurements", builtIn: null },
+  { num: 10, name: "Material / Performance Test Results",  cat: "Quality",        hint: "CoC, lab reports, material certifications (heat/lot)",         builtIn: null },
+  { num: 11, name: "Initial Process Studies (Cpk / SPC)",  cat: "Quality",        hint: "Process capability — Cpk ≥ 1.67 for CCs; ≥ 1.33 for KPCs",   builtIn: null },
+  { num: 12, name: "Qualified Laboratory Documentation",   cat: "Quality",        hint: "A2LA, ISO 17025, or customer-approved internal lab certs",    builtIn: null },
+  { num: 13, name: "Appearance Approval Report (AAR)",     cat: "Quality",        hint: "Signed AAR for components with appearance requirements",       builtIn: null },
+  { num: 14, name: "Sample Production Parts",              cat: "Submission",     hint: "Physical samples from actual production run (typically 1–10)", builtIn: null },
+  { num: 15, name: "Master Sample",                        cat: "Submission",     hint: "Reference master sample retained by supplier and customer",    builtIn: null },
+  { num: 16, name: "Checking Aids",                        cat: "Submission",     hint: "Fixtures, gauges, attribute templates used for inspection",    builtIn: null },
+  { num: 17, name: "Customer-Specific Requirements",       cat: "Submission",     hint: "CSRs: GM BIQS, Ford Q1, Stellantis SQ, etc.",                 builtIn: null },
+  { num: 18, name: "Part Submission Warrant (PSW)",        cat: "Submission",     hint: "Signed PSW — formal submission document for customer approval", builtIn: null },
+];
+
+const PPAP_LEVEL_REQUIRED: Record<number, Set<number>> = {
+  1: new Set([18]),
+  2: new Set([1, 5, 6, 7, 9, 17, 18]),
+  3: new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]),
+  4: new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]),
+  5: new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]),
+};
+
+const PPAP_LEVEL_INFO = [
+  { level: 1, desc: "PSW only — no supporting data submitted" },
+  { level: 2, desc: "PSW + samples + limited supporting data" },
+  { level: 3, desc: "PSW + samples + complete data  (most common)" },
+  { level: 4, desc: "PSW + other requirements (customer-specified)" },
+  { level: 5, desc: "PSW + samples + full data + on-site review" },
+];
+
+type ElemStatus = "not_started" | "in_progress" | "complete" | "na";
+type PPAPData = {
+  level: number;
+  elements: Record<number, { status: ElemStatus; notes: string }>;
+  submittedTo: string; pswSignedBy: string; pswDate: string; customerApproval: string;
+};
+
+function mkDefaultPpap(): PPAPData {
+  const elements: PPAPData["elements"] = {};
+  PPAP_ELEMENTS.forEach(e => { elements[e.num] = { status: "not_started", notes: "" }; });
+  return { level: 3, elements, submittedTo: "", pswSignedBy: "", pswDate: "", customerApproval: "pending" };
+}
+
+function PPAPElementsTab({ projectId, onNavigate }: { projectId: number; onNavigate: (tab: DocSuiteTab) => void }) {
+  const storageKey = `ppap_data_${projectId}`;
+  const [data, setData] = useState<PPAPData>(() => {
+    try { const s = localStorage.getItem(storageKey); if (s) return { ...mkDefaultPpap(), ...JSON.parse(s) }; } catch {}
+    return mkDefaultPpap();
+  });
+  const [openNotes, setOpenNotes] = useState<Set<number>>(new Set());
+
+  const save = (patch: Partial<PPAPData>) => setData(d => {
+    const next = { ...d, ...patch };
+    localStorage.setItem(storageKey, JSON.stringify(next));
+    return next;
+  });
+
+  const setElem = (num: number, field: "status" | "notes", val: string) => {
+    const next = { ...data.elements, [num]: { ...data.elements[num], [field]: val } };
+    save({ elements: next });
+  };
+
+  const toggleNotes = (num: number) => setOpenNotes(s => { const n = new Set(s); n.has(num) ? n.delete(num) : n.add(num); return n; });
+
+  const required = PPAP_LEVEL_REQUIRED[data.level] ?? PPAP_LEVEL_REQUIRED[3];
+  const reqElems = PPAP_ELEMENTS.filter(e => required.has(e.num));
+  const doneCount = reqElems.filter(e => data.elements[e.num]?.status === "complete" || data.elements[e.num]?.status === "na").length;
+  const readiness = reqElems.length ? Math.round((doneCount / reqElems.length) * 100) : 0;
+  const progressColor = readiness === 100 ? "#10b981" : readiness >= 60 ? "#f59e0b" : "#3b82f6";
+
+  const statusStyle: Record<ElemStatus, string> = {
+    not_started: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+    in_progress:  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    complete:     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    na:           "bg-slate-50 text-slate-400 dark:bg-slate-900 dark:text-slate-500",
+  };
+
+  const BUILT_IN_LABEL: Record<string, string> = { pfd: "Process Flow", pfmea: "PFMEA", control_plan: "Control Plan" };
+  const CATS = ["Design", "Manufacturing", "Quality", "Submission"];
+
+  return (
+    <div className="p-5 space-y-5 max-w-5xl">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-base">PPAP Submission Tracker</h3>
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">AIAG PPAP 4th Edition</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">18 elements · Production Part Approval Process · Select your submission level to see required elements</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Readiness</p>
+            <p className="text-2xl font-bold" style={{ color: progressColor }}>{readiness}%</p>
+          </div>
+          <div className="relative w-12 h-12">
+            <svg viewBox="0 0 44 44" className="w-12 h-12 -rotate-90">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+              <circle cx="22" cy="22" r="18" fill="none" stroke={progressColor} strokeWidth="4"
+                strokeDasharray={`${2 * Math.PI * 18}`}
+                strokeDashoffset={`${2 * Math.PI * 18 * (1 - readiness / 100)}`}
+                strokeLinecap="round" className="transition-all duration-500" />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">{doneCount}/{reqElems.length}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Level selector */}
+      <div className="rounded-xl border border-border/50 p-4 space-y-2">
+        <Label className="text-xs font-semibold block">Submission Level</Label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          {PPAP_LEVEL_INFO.map(l => (
+            <button key={l.level} onClick={() => save({ level: l.level })}
+              className={`flex-1 text-left px-3 py-2.5 rounded-lg border-2 text-xs transition-all ${data.level === l.level ? "border-accent bg-accent/5 text-foreground" : "border-border hover:border-accent/40 text-muted-foreground"}`}
+              data-testid={`ppap-level-${l.level}`}>
+              <span className="font-bold block text-sm">Level {l.level}</span>
+              <span className="leading-tight mt-0.5 block">{l.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+        <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${readiness}%`, backgroundColor: progressColor }} />
+      </div>
+
+      {/* Elements by category */}
+      {CATS.map(cat => {
+        const catElems = PPAP_ELEMENTS.filter(e => e.cat === cat && (data.level === 4 || required.has(e.num)));
+        if (!catElems.length) return null;
+        const catDone = catElems.filter(e => data.elements[e.num]?.status === "complete" || data.elements[e.num]?.status === "na").length;
+        return (
+          <div key={cat} className="rounded-xl border border-border/50 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border-b border-border/40">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{cat}</h4>
+              <span className="text-xs text-muted-foreground">{catDone}/{catElems.length} complete</span>
+            </div>
+            <div className="divide-y divide-border/30">
+              {catElems.map(el => {
+                const ed = data.elements[el.num] ?? { status: "not_started" as ElemStatus, notes: "" };
+                const status = ed.status as ElemStatus;
+                return (
+                  <div key={el.num} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 shrink-0 text-[10px] font-mono font-bold bg-accent/10 text-accent rounded px-1.5 py-0.5">{el.num}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs font-semibold">{el.name}</p>
+                          {el.builtIn && (
+                            <button onClick={() => onNavigate(el.builtIn as DocSuiteTab)}
+                              className="flex items-center gap-1 text-[10px] text-accent hover:underline font-medium"
+                              data-testid={`ppap-open-${el.builtIn}`}>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                              Open {BUILT_IN_LABEL[el.builtIn]} in CCHUB
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{el.hint}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => toggleNotes(el.num)} className={`p-1 rounded transition-colors ${openNotes.has(el.num) ? "text-accent" : "text-muted-foreground hover:text-foreground"}`} title="Notes">
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                        <Select value={status} onValueChange={v => setElem(el.num, "status", v)}>
+                          <SelectTrigger className={`h-7 text-xs w-[7.5rem] border-0 rounded-md font-medium ${statusStyle[status]}`} data-testid={`ppap-status-${el.num}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not_started">Not Started</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="complete">Complete</SelectItem>
+                            <SelectItem value="na">N/A</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {openNotes.has(el.num) && (
+                      <div className="mt-2 pl-8">
+                        <Input value={ed.notes} onChange={e => setElem(el.num, "notes", e.target.value)}
+                          placeholder="Document reference, evidence location, notes…"
+                          className="h-7 text-xs" data-testid={`ppap-notes-${el.num}`} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* PSW Section */}
+      <div className="rounded-xl border border-border/50 overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border-b border-border/40">
+          <PackageCheck className="w-3.5 h-3.5 text-accent" />
+          <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Part Submission Warrant (PSW) — Element 18</h4>
+        </div>
+        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <Label className="text-xs text-muted-foreground block mb-1">Submitted To (Customer / Plant)</Label>
+            <Input value={data.submittedTo} onChange={e => save({ submittedTo: e.target.value })} placeholder="e.g. GM Lansing Plant" className="h-8 text-xs" data-testid="ppap-psw-submitted-to" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground block mb-1">Signed By (Supplier Rep)</Label>
+            <Input value={data.pswSignedBy} onChange={e => save({ pswSignedBy: e.target.value })} placeholder="Name / Title" className="h-8 text-xs" data-testid="ppap-psw-signed-by" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground block mb-1">Submission Date</Label>
+            <Input type="date" value={data.pswDate} onChange={e => save({ pswDate: e.target.value })} className="h-8 text-xs" data-testid="ppap-psw-date" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground block mb-1">Customer Approval Status</Label>
+            <Select value={data.customerApproval} onValueChange={v => save({ customerApproval: v })}>
+              <SelectTrigger className="h-8 text-xs" data-testid="ppap-customer-approval"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending Submission</SelectItem>
+                <SelectItem value="approved">Approved (Full)</SelectItem>
+                <SelectItem value="conditional">Conditional Approval</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main APQPDocSuite Component ──────────────────────────────────────────────
 
 const DOC_SUITE_TABS: { key: DocSuiteTab; label: string; icon: ComponentType<{ className?: string }>; desc: string }[] = [
-  { key: "pfd",          label: "Process Flow",   icon: GitFork,       desc: "PFD" },
-  { key: "pfmea",        label: "PFMEA",          icon: FileText,      desc: "AIAG 4th Ed." },
-  { key: "control_plan", label: "Control Plan",   icon: ClipboardList, desc: "AIAG" },
-  { key: "inspection",   label: "Inspection",     icon: CheckCircle,   desc: "Sheets" },
+  { key: "ppap_elements", label: "PPAP Elements", icon: PackageCheck,   desc: "18-Element Tracker" },
+  { key: "pfd",           label: "Process Flow",  icon: GitFork,        desc: "PFD" },
+  { key: "pfmea",         label: "PFMEA",         icon: FileText,       desc: "AIAG & VDA 2019" },
+  { key: "control_plan",  label: "Control Plan",  icon: ClipboardList,  desc: "AIAG" },
+  { key: "inspection",    label: "Inspection",    icon: CheckCircle,    desc: "Sheets" },
 ];
 
 interface APQPDocSuiteProps {
@@ -2111,7 +2353,7 @@ interface APQPDocSuiteProps {
 }
 
 export function APQPDocSuite({ projectId, project }: APQPDocSuiteProps) {
-  const [activeTab, setActiveTab] = useState<DocSuiteTab>("pfd");
+  const [activeTab, setActiveTab] = useState<DocSuiteTab>("ppap_elements");
 
   return (
     <div className="flex flex-col h-full">
@@ -2142,10 +2384,11 @@ export function APQPDocSuite({ projectId, project }: APQPDocSuiteProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "pfd"          && <ProcessFlowTab projectId={projectId} />}
-        {activeTab === "pfmea"        && <PfmeaTab projectId={projectId} />}
-        {activeTab === "control_plan" && <ControlPlanTab projectId={projectId} project={project} />}
-        {activeTab === "inspection"   && <InspectionTab projectId={projectId} project={project} />}
+        {activeTab === "ppap_elements" && <PPAPElementsTab projectId={projectId} onNavigate={setActiveTab} />}
+        {activeTab === "pfd"           && <ProcessFlowTab projectId={projectId} />}
+        {activeTab === "pfmea"         && <PfmeaTab projectId={projectId} />}
+        {activeTab === "control_plan"  && <ControlPlanTab projectId={projectId} project={project} />}
+        {activeTab === "inspection"    && <InspectionTab projectId={projectId} project={project} />}
       </div>
     </div>
   );

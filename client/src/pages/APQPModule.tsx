@@ -1239,7 +1239,7 @@ function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () =
             <Beaker className="w-5 h-5 mb-0.5 text-accent" />
             <span className="text-xs font-medium text-center leading-tight">Design &amp; Dev 8.3</span>
           </button>
-          {/* Doc Suite tab */}
+          {/* PPAP Docs tab */}
           <button
             onClick={() => setActiveTab("doc_suite")}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all min-w-[90px] ml-1 ${
@@ -1247,8 +1247,8 @@ function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () =
             }`}
             data-testid="tab-doc-suite"
           >
-            <FileText className="w-5 h-5 mb-0.5 text-accent" />
-            <span className="text-xs font-medium text-center leading-tight">Doc Suite</span>
+            <ClipboardCheck className="w-5 h-5 mb-0.5 text-accent" />
+            <span className="text-xs font-medium text-center leading-tight">PPAP Docs</span>
           </button>
         </div>
       </div>
