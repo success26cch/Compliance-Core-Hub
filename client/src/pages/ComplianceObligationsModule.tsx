@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1825,7 +1826,9 @@ export default function ComplianceObligationsModule({
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const isMedDevice = !!(project?.standard?.includes("13485"));
+  const { user } = useAuth();
+  const isSuperadmin = !!(user as any)?.claims?.isSuperadmin;
+  const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
 
   type TabKey = "register" | "evaluation" | "md_evidence" | "md_calendar" | "md_complaints";
   const [activeTab, setActiveTab] = useState<TabKey>("register");
