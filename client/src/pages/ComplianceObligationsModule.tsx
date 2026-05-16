@@ -23,8 +23,6 @@ import ComplianceApplicabilityDialog from "@/components/iso/ComplianceApplicabil
 import ComplianceEvaluationWizard from "@/components/iso/ComplianceEvaluationWizard";
 import {
   EvidenceRepositoryTab,
-  RegulatoryCalendarTab,
-  ComplaintEscalationTab,
 } from "./MdRegulatoryOverlay";
 
 /* ─── Constants ─────────────────────────────────────────── */
@@ -1830,7 +1828,7 @@ export default function ComplianceObligationsModule({
   const isSuperadmin = !!(user as any)?.claims?.isSuperadmin;
   const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
 
-  type TabKey = "register" | "evaluation" | "md_evidence" | "md_calendar" | "md_complaints";
+  type TabKey = "register" | "evaluation" | "md_evidence";
   const [activeTab, setActiveTab] = useState<TabKey>("register");
 
   // Import MD starter library
@@ -2228,9 +2226,7 @@ export default function ComplianceObligationsModule({
             { key: "register",      label: "Obligations Register", icon: FileText },
             { key: "evaluation",    label: "Evaluation Log",       icon: ClipboardCheck },
             ...(isMedDevice ? [
-              { key: "md_evidence",   label: "MD Evidence",          icon: Database },
-              { key: "md_calendar",   label: "MD Calendar",          icon: CalendarDays },
-              { key: "md_complaints", label: "MD Complaints",        icon: AlertCircle },
+              { key: "md_evidence", label: "MD Evidence", icon: Database },
             ] : []),
           ].map(({ key, label, icon: Icon }) => (
             <button
@@ -3190,16 +3186,6 @@ export default function ComplianceObligationsModule({
       {activeTab === "md_evidence" && (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <EvidenceRepositoryTab isoProjectId={isoProjectId} />
-        </div>
-      )}
-      {activeTab === "md_calendar" && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <RegulatoryCalendarTab isoProjectId={isoProjectId} />
-        </div>
-      )}
-      {activeTab === "md_complaints" && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <ComplaintEscalationTab isoProjectId={isoProjectId} />
         </div>
       )}
 

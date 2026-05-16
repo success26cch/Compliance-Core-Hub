@@ -493,6 +493,7 @@ export default function ISOManager() {
   const canAsk = !!usageData?.canAsk;
   const isoRole = (user?.isoRole as IsoRoleType) ?? null;
   const isSuperadmin = !!user?.isSuperadmin;
+  const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
 
   const handleSectionChange = (section: SectionKey) => {
     if (!canAccessSection(section, isoRole, isSuperadmin)) return;
@@ -1072,7 +1073,7 @@ export default function ISOManager() {
               </div>
             ) : activeSection === 'nc' ? (
               <div className="flex-1 overflow-y-auto min-h-0">
-                <NonconformanceManager onAskIsa={handleAskIsa} />
+                <NonconformanceManager onAskIsa={handleAskIsa} isMedDevice={isMedDevice} />
               </div>
             ) : activeSection === 'process_map' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -1153,7 +1154,7 @@ export default function ISOManager() {
             ) : activeSection === 'compliance_calendar' ? (
               <div className="flex-1 min-h-0 overflow-y-auto">
                 {canAccessSection('compliance_calendar', isoRole, isSuperadmin)
-                  ? <ComplianceCalendarModule isoProjectId={project?.id} />
+                  ? <ComplianceCalendarModule isoProjectId={project?.id} isMedDevice={isMedDevice} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_calendar" /></div>}
               </div>
             ) : activeSection === 'aspects_impacts' ? (

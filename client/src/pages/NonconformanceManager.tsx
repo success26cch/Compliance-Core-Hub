@@ -67,6 +67,7 @@ import { useCreateIsaConversation } from "@/hooks/use-isa-chat";
 
 interface NonconformanceManagerProps {
   onAskIsa: (prompt: string) => void;
+  isMedDevice?: boolean;
 }
 
 type DocUpdateItem = {
@@ -98,7 +99,7 @@ const TRAINING_TRIGGER_DOC_TYPES = new Set([
   'Inspection / Test Plan', 'Training Materials', 'Control Plan', 'Reaction Plan',
 ]);
 
-export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) {
+export function NonconformanceManager({ onAskIsa, isMedDevice = false }: NonconformanceManagerProps) {
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [selectedNC, setSelectedNC] = useState<Nonconformance | null>(null);
   const [activeLogTab, setActiveLogTab] = useState<'nc' | 'capa'>('nc');
@@ -381,6 +382,7 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
         project={project ?? null}
+        isMedDevice={isMedDevice}
       />
 
       {selectedNC && (
@@ -391,6 +393,7 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
           onUpdate={(data) => updateMutation.mutate({ id: selectedNC.id, data })}
           onAskIsa={onAskIsa}
           isUpdating={updateMutation.isPending}
+          isMedDevice={isMedDevice}
         />
       )}
     </div>
@@ -413,12 +416,13 @@ function StatsCard({ title, value, icon: Icon, color }: { title: string; value: 
   );
 }
 
-function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project }: { 
+function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project, isMedDevice }: { 
   isOpen: boolean; 
   onClose: () => void; 
   onSubmit: (data: InsertNonconformance) => void;
   isPending: boolean;
   project: IsoProject | null;
+  isMedDevice?: boolean;
 }) {
   const [formData, setFormData] = useState<Partial<InsertNonconformance>>({
     title: "",
@@ -566,6 +570,49 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project }: {
             </div>
           </div>
 
+          {isMedDevice && (
+            <div className="rounded-lg border border-pink-200 dark:border-pink-800/50 overflow-hidden">
+              <div className="bg-pink-50 dark:bg-pink-950/30 border-b border-pink-200 dark:border-pink-800/40 px-4 py-2.5 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-pink-600" />
+                <span className="text-sm font-bold text-pink-700 dark:text-pink-400">ISO 13485 — Complaint &amp; MDR Fields</span>
+                <span className="ml-auto text-[10px] text-pink-500 font-medium">§8.2 / §8.3 / FDA 21 CFR 820.198</span>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Complaint Category (§8.2)</Label>
+                    <Select value={(formData as any).mdComplaintCategory ?? ""} onValueChange={v => setFormData({ ...formData, mdComplaintCategory: v } as any)}>
+                      <SelectTrigger data-testid="select-md-complaint-category"><SelectValue placeholder="Select category" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">— Not applicable —</SelectItem>
+                        <SelectItem value="product_complaint">Product Complaint</SelectItem>
+                        <SelectItem value="adverse_event">Adverse Event</SelectItem>
+                        <SelectItem value="device_malfunction">Device Malfunction</SelectItem>
+                        <SelectItem value="use_error">Use Error</SelectItem>
+                        <SelectItem value="labeling_issue">Labeling Issue</SelectItem>
+                        <SelectItem value="sterility">Sterility / Contamination</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">MDR Severity Class</Label>
+                    <Select value={(formData as any).mdSeverityClass ?? ""} onValueChange={v => setFormData({ ...formData, mdSeverityClass: v } as any)}>
+                      <SelectTrigger data-testid="select-md-severity-class"><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">— Pending review —</SelectItem>
+                        <SelectItem value="class_i_30day">Class I — 30-day report</SelectItem>
+                        <SelectItem value="class_ii_5day">Class II — 5-day report</SelectItem>
+                        <SelectItem value="class_iii_immediate">Class III — Immediate report</SelectItem>
+                        <SelectItem value="not_reportable">Not MDR-reportable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" className="bg-accent hover:bg-accent/90 text-white" disabled={isPending} data-testid="button-submit-nc">
@@ -578,13 +625,14 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project }: {
   );
 }
 
-function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }: {
+function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating, isMedDevice = false }: {
   nc: Nonconformance;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (data: Partial<InsertNonconformance>) => void;
   onAskIsa: (prompt: string) => void;
   isUpdating: boolean;
+  isMedDevice?: boolean;
 }) {
   const { toast } = useToast();
   const ncAny = nc as any;
@@ -1492,6 +1540,71 @@ Keep each item under 20 words. No lengthy explanation.`;
                   )}
                   </div>
                 </section>
+
+                {/* ── ISO 13485 Complaint & MDR Overlay ── */}
+                {isMedDevice && (
+                  <section className="rounded-xl border border-pink-200 dark:border-pink-800/50 overflow-hidden">
+                    <div className="bg-pink-50 dark:bg-pink-950/30 border-b border-pink-200 dark:border-pink-800/40 px-4 py-2.5 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-pink-600" />
+                      <span className="text-sm font-bold text-pink-700 dark:text-pink-400">ISO 13485 — Complaint &amp; MDR Assessment</span>
+                      <span className="ml-auto text-[10px] text-pink-500 font-medium">§8.2 / §8.3 / FDA 21 CFR 820.198</span>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">Complaint Category (§8.2)</label>
+                          <Select
+                            value={ncAny.mdComplaintCategory || ""}
+                            onValueChange={v => onUpdate({ mdComplaintCategory: v || null } as any)}
+                          >
+                            <SelectTrigger className="h-8 text-sm" data-testid="select-nc-detail-md-complaint">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">— Not applicable —</SelectItem>
+                              <SelectItem value="product_complaint">Product Complaint</SelectItem>
+                              <SelectItem value="adverse_event">Adverse Event</SelectItem>
+                              <SelectItem value="device_malfunction">Device Malfunction</SelectItem>
+                              <SelectItem value="use_error">Use Error</SelectItem>
+                              <SelectItem value="labeling_issue">Labeling Issue</SelectItem>
+                              <SelectItem value="sterility">Sterility / Contamination</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">MDR Severity Class</label>
+                          <Select
+                            value={ncAny.mdSeverityClass || ""}
+                            onValueChange={v => onUpdate({ mdSeverityClass: v || null } as any)}
+                          >
+                            <SelectTrigger className="h-8 text-sm" data-testid="select-nc-detail-md-severity">
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">— Pending review —</SelectItem>
+                              <SelectItem value="class_i_30day">Class I — 30-day report</SelectItem>
+                              <SelectItem value="class_ii_5day">Class II — 5-day report</SelectItem>
+                              <SelectItem value="class_iii_immediate">Class III — Immediate report</SelectItem>
+                              <SelectItem value="not_reportable">Not MDR-reportable</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {ncAny.mdSeverityClass && ncAny.mdSeverityClass !== "not_reportable" && (
+                        <div className="flex items-start gap-2 p-3 bg-pink-50 dark:bg-pink-900/10 border border-pink-200 dark:border-pink-800/30 rounded-lg text-xs text-pink-800 dark:text-pink-300">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          <span>
+                            <strong>MDR Reporting Required:</strong>{" "}
+                            {ncAny.mdSeverityClass === "class_iii_immediate" && "Immediate report to FDA required (MDR 803.53)."}
+                            {ncAny.mdSeverityClass === "class_ii_5day" && "5-day report to FDA required (MDR 803.53)."}
+                            {ncAny.mdSeverityClass === "class_i_30day" && "30-day report to FDA required (MDR 803.50)."}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 {/* ── Training Required ── */}
                 {(() => {

@@ -27,6 +27,16 @@ const CATEGORY_CONFIG: Record<string, {
   label: string; sublabel: string; icon: any;
   badge: string; dot: string; border: string; bg: string; textColor: string;
 }> = {
+  med_device: {
+    label: "Med Device Regulatory",
+    sublabel: "ISO 13485 / FDA / EU MDR",
+    icon: FileText,
+    badge: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
+    dot: "bg-pink-500",
+    border: "border-l-pink-500",
+    bg: "bg-pink-50 dark:bg-pink-950/30",
+    textColor: "text-pink-700 dark:text-pink-400",
+  },
   env_legal: {
     label: "Env. Legal Obligations",
     sublabel: "ISO 14001 6.1.3 / 9.1.2",
@@ -90,15 +100,20 @@ const CATEGORY_CONFIG: Record<string, {
 };
 
 const EVENT_TYPES = [
-  { value: "deadline",      label: "Compliance Deadline" },
-  { value: "permit_renewal",label: "Permit Renewal" },
-  { value: "report_due",    label: "Regulatory Report Due" },
-  { value: "monitoring",    label: "Monitoring / Sampling" },
-  { value: "inspection",    label: "Inspection" },
-  { value: "review",        label: "Plan / Program Review" },
-  { value: "training",      label: "Training" },
-  { value: "drill",         label: "Drill / Exercise" },
-  { value: "audit",         label: "Audit" },
+  { value: "deadline",        label: "Compliance Deadline" },
+  { value: "permit_renewal",  label: "Permit Renewal" },
+  { value: "report_due",      label: "Regulatory Report Due" },
+  { value: "monitoring",      label: "Monitoring / Sampling" },
+  { value: "inspection",      label: "Inspection" },
+  { value: "review",          label: "Plan / Program Review" },
+  { value: "training",        label: "Training" },
+  { value: "drill",           label: "Drill / Exercise" },
+  { value: "audit",           label: "Audit" },
+  { value: "mdr_report",      label: "MDR / Adverse Event Report" },
+  { value: "psur",            label: "PSUR / Post-Market Surveillance Report" },
+  { value: "fda_submission",  label: "FDA Submission / 510(k) / PMA" },
+  { value: "advisory_notice", label: "Advisory Notice / Field Safety Action" },
+  { value: "design_review",   label: "Design Review / DHF Update" },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: any }> = {
@@ -574,7 +589,7 @@ function ListView({
 }
 
 // ─── Main Module ──────────────────────────────────────────────────────────────
-export default function ComplianceCalendarModule({ isoProjectId }: { isoProjectId?: number }) {
+export default function ComplianceCalendarModule({ isoProjectId, isMedDevice }: { isoProjectId?: number; isMedDevice?: boolean }) {
   const { toast } = useToast();
   const qClient = useQueryClient();
 
@@ -629,12 +644,13 @@ export default function ComplianceCalendarModule({ isoProjectId }: { isoProjectI
   function nextMonth() { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }
 
   const FILTER_TABS = [
-    { key: "all",      label: "All" },
-    { key: "env_legal", label: "Env Legal 6.1.3" },
-    { key: "ohs_legal", label: "OH&S Legal 6.1.3" },
-    { key: "osha",      label: "OSHA" },
-    { key: "training",  label: "Training" },
-    { key: "drill",     label: "Drills" },
+    { key: "all",        label: "All" },
+    ...(isMedDevice ? [{ key: "med_device", label: "Med Device (ISO 13485)" }] : []),
+    { key: "env_legal",  label: "Env Legal 6.1.3" },
+    { key: "ohs_legal",  label: "OH&S Legal 6.1.3" },
+    { key: "osha",       label: "OSHA" },
+    { key: "training",   label: "Training" },
+    { key: "drill",      label: "Drills" },
   ];
 
   return (
