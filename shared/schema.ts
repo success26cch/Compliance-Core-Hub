@@ -495,6 +495,20 @@ export const nonconformances = pgTable("nonconformances", {
   capaDecisionBy: text("capa_decision_by"),
   capaDecisionDate: timestamp("capa_decision_date"),
   capaDecisionNotes: text("capa_decision_notes"),
+  // ── ISO 13485 / Medical Device Regulatory Fields ──────────────────────────
+  mdComplaintCategory: text("md_complaint_category"),       // product_complaint | adverse_event | device_malfunction | use_error | labeling_issue | sterility | other
+  mdSeverityClass: text("md_severity_class"),               // class_i_30day | class_ii_5day | class_iii_immediate | not_reportable
+  requiresRegulatoryReport: boolean("requires_regulatory_report").default(false),
+  reportingDeadline: text("reporting_deadline"),            // ISO date string
+  reportSubmitted: boolean("report_submitted").default(false),
+  reportSubmissionDate: text("report_submission_date"),
+  reportReferenceNumber: text("report_reference_number"),
+  escalationTriggered: boolean("escalation_triggered").default(false),
+  escalationDate: text("escalation_date"),
+  escalationNotes: text("escalation_notes"),
+  regulatoryApprovalRequired: boolean("regulatory_approval_required").default(false),
+  regulatoryApprovedBy: text("regulatory_approved_by"),
+  regulatoryApprovalDate: text("regulatory_approval_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -2988,6 +3002,14 @@ export const isoComplianceObligations = pgTable("iso_compliance_obligations", {
   actionRequired: text("action_required"),
   notes: text("notes"),
   standard: text("standard").notNull().default("ISO 14001"),
+  // ── Medical Device Regulatory Extension fields ────────────────────────────
+  mdRegulatory: boolean("md_regulatory").default(false),
+  regulatoryFramework: text("regulatory_framework"),  // FDA_21CFR_820 | FDA_MDR | EU_MDR | EU_IVDR | ISO_13485 | Health_Canada | Other
+  reportingTimeline: text("reporting_timeline"),       // e.g. "30 calendar days", "5 business days"
+  validationRequired: boolean("validation_required").default(false),
+  linkedCapaNumber: text("linked_capa_number"),
+  linkedAuditId: integer("linked_audit_id"),
+  linkedMgmtReviewId: integer("linked_mgmt_review_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -3212,3 +3234,40 @@ export const docControlSettings = pgTable("doc_control_settings", {
 export const insertDocControlSettingsSchema = createInsertSchema(docControlSettings).omit({ id: true, updatedAt: true });
 export type DocControlSettings = typeof docControlSettings.$inferSelect;
 export type InsertDocControlSettings = z.infer<typeof insertDocControlSettingsSchema>;
+
+// ─── Medical Device Regulatory Evidence Repository (ISO 13485 Overlay) ────────
+// Central repository for all regulatory evidence records — complaint evidence,
+// validation evidence, regulatory submissions, adverse event records,
+// investigation attachments, CAPA evidence, PMS data, and audit evidence.
+// Linked to existing obligations, complaints (nonconformances), and CAPA records.
+export const mdRegulatoryEvidence = pgTable("md_regulatory_evidence", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  title: text("title").notNull(),
+  evidenceType: text("evidence_type").notNull().default("other"),
+  // complaint_evidence | validation_evidence | regulatory_submission |
+  // adverse_event_record | investigation_attachment | capa_evidence |
+  // audit_evidence | post_market_surveillance | retention_record | other
+  referenceNumber: text("reference_number"),
+  relatedObligationId: integer("related_obligation_id"),
+  relatedComplaintId: integer("related_complaint_id"),
+  relatedCapaNumber: text("related_capa_number"),
+  relatedAuditId: integer("related_audit_id"),
+  description: text("description"),
+  submittedTo: text("submitted_to"),          // FDA, EU MDR Notified Body, Health Canada, etc.
+  submissionDate: text("submission_date"),    // ISO date string
+  retentionUntil: text("retention_until"),   // ISO date string
+  retentionYears: integer("retention_years"),
+  status: text("status").notNull().default("draft"), // draft | active | submitted | accepted | rejected | archived
+  fileName: text("file_name"),
+  fileType: text("file_type"),
+  fileData: text("file_data"),               // base64 encoded
+  notes: text("notes"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertMdRegulatoryEvidenceSchema = createInsertSchema(mdRegulatoryEvidence).omit({ id: true, createdAt: true, updatedAt: true });
+export type MdRegulatoryEvidence = typeof mdRegulatoryEvidence.$inferSelect;
+export type InsertMdRegulatoryEvidence = z.infer<typeof insertMdRegulatoryEvidenceSchema>;

@@ -75,6 +75,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type ApqpInspectionRow, type InsertApqpInspectionRow,
   complianceCalendarEvents,
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
+  mdRegulatoryEvidence,
+  type MdRegulatoryEvidence, type InsertMdRegulatoryEvidence,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, asc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -572,6 +574,12 @@ export interface IStorage {
   // ── Document Control Settings (Watermarking) ─────────────────────────────
   getDocControlSettings(userId: string): Promise<DocControlSettings | null>;
   upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings>;
+  // ── MD Regulatory Evidence Repository (ISO 13485 Overlay) ────────────────
+  getMdRegulatoryEvidence(userId: string, isoProjectId?: number): Promise<MdRegulatoryEvidence[]>;
+  getMdRegulatoryEvidenceById(id: number, userId: string): Promise<MdRegulatoryEvidence | null>;
+  createMdRegulatoryEvidence(data: InsertMdRegulatoryEvidence): Promise<MdRegulatoryEvidence>;
+  updateMdRegulatoryEvidence(id: number, userId: string, data: Partial<InsertMdRegulatoryEvidence>): Promise<MdRegulatoryEvidence | null>;
+  deleteMdRegulatoryEvidence(id: number, userId: string): Promise<void>;
 
   // APQP Documentation Suite
   getApqpProcessSteps(apqpProjectId: number, userId: string): Promise<ApqpProcessStep[]>;
@@ -3205,6 +3213,34 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, draftWatermark: false, printWatermark: false, approvedHeaderFooter: false, fingerprint: false, ...data })
       .returning();
     return created;
+  }
+
+  // ── MD Regulatory Evidence Repository (ISO 13485 Overlay) ─────────────────
+  async getMdRegulatoryEvidence(userId: string, isoProjectId?: number): Promise<MdRegulatoryEvidence[]> {
+    const conditions = isoProjectId
+      ? and(eq(mdRegulatoryEvidence.userId, userId), eq(mdRegulatoryEvidence.isoProjectId, isoProjectId))
+      : eq(mdRegulatoryEvidence.userId, userId);
+    return db.select().from(mdRegulatoryEvidence).where(conditions).orderBy(desc(mdRegulatoryEvidence.createdAt));
+  }
+  async getMdRegulatoryEvidenceById(id: number, userId: string): Promise<MdRegulatoryEvidence | null> {
+    const [row] = await db.select().from(mdRegulatoryEvidence)
+      .where(and(eq(mdRegulatoryEvidence.id, id), eq(mdRegulatoryEvidence.userId, userId)));
+    return row ?? null;
+  }
+  async createMdRegulatoryEvidence(data: InsertMdRegulatoryEvidence): Promise<MdRegulatoryEvidence> {
+    const [row] = await db.insert(mdRegulatoryEvidence).values(data).returning();
+    return row;
+  }
+  async updateMdRegulatoryEvidence(id: number, userId: string, data: Partial<InsertMdRegulatoryEvidence>): Promise<MdRegulatoryEvidence | null> {
+    const [row] = await db.update(mdRegulatoryEvidence)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(mdRegulatoryEvidence.id, id), eq(mdRegulatoryEvidence.userId, userId)))
+      .returning();
+    return row ?? null;
+  }
+  async deleteMdRegulatoryEvidence(id: number, userId: string): Promise<void> {
+    await db.delete(mdRegulatoryEvidence)
+      .where(and(eq(mdRegulatoryEvidence.id, id), eq(mdRegulatoryEvidence.userId, userId)));
   }
 }
 

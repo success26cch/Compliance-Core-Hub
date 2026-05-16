@@ -11731,5 +11731,97 @@ ${sectorGuidance}`;
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── MD Regulatory Evidence Repository (ISO 13485 Overlay) ──────────────────
+  app.get("/api/md-regulatory-evidence", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const isoProjectId = req.query.isoProjectId ? Number(req.query.isoProjectId) : undefined;
+      res.json(await storage.getMdRegulatoryEvidence(req.session.userId, isoProjectId));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/md-regulatory-evidence", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { insertMdRegulatoryEvidenceSchema } = await import("@shared/schema");
+      const parsed = insertMdRegulatoryEvidenceSchema.safeParse({ ...req.body, userId: req.session.userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const rec = await storage.createMdRegulatoryEvidence(parsed.data);
+      res.status(201).json(rec);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/md-regulatory-evidence/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const rec = await storage.updateMdRegulatoryEvidence(Number(req.params.id), req.session.userId, req.body);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/md-regulatory-evidence/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteMdRegulatoryEvidence(Number(req.params.id), req.session.userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── MD Regulatory Obligations Starter Library (ISO 13485) ──────────────────
+  app.post("/api/iso-compliance-obligations/bulk-md", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isoProjectId = req.body.isoProjectId ? Number(req.body.isoProjectId) : undefined;
+    try {
+      const { insertIsoComplianceObligationSchema, isoComplianceObligations } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const { db } = await import("./db");
+      const existing = await db.select({ requirementName: isoComplianceObligations.requirementName })
+        .from(isoComplianceObligations).where(eq(isoComplianceObligations.userId, userId));
+      const existingNames = new Set(existing.map((r: { requirementName: string }) => r.requirementName));
+
+      const MD_STARTER_LIBRARY = [
+        // FDA 21 CFR Part 820 — Quality System Regulation
+        { requirementName: "FDA 21 CFR 820.30 — Design Controls", citationSource: "21 CFR Part 820.30", jurisdictionLevel: "F", aspectCategory: "Regulatory Submission", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, reportingTimeline: "Ongoing — review at design phase gates", validationRequired: true, standard: "ISO 13485", descriptionOfRequirement: "Establish and maintain procedures to control the design of the device to ensure the specified design requirements are met.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.50 — Purchasing Controls", citationSource: "21 CFR Part 820.50", jurisdictionLevel: "F", aspectCategory: "Supplier Management", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, standard: "ISO 13485", descriptionOfRequirement: "Establish and maintain procedures to ensure that all purchased or otherwise received product and services conform to specified requirements.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.100 — Corrective and Preventive Action", citationSource: "21 CFR Part 820.100", jurisdictionLevel: "F", aspectCategory: "CAPA", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, reportingTimeline: "Ongoing — CAPA closure within defined timeline", standard: "ISO 13485", descriptionOfRequirement: "Establish and maintain procedures for implementing corrective and preventive action.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.198 — Complaint Files", citationSource: "21 CFR Part 820.198", jurisdictionLevel: "F", aspectCategory: "Complaint Handling", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, reportingTimeline: "Review within 30 days; MDR if reportable", standard: "ISO 13485", descriptionOfRequirement: "Maintain complaint files and evaluate complaints to determine if an MDR is required.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.184 — Device History Record", citationSource: "21 CFR Part 820.184", jurisdictionLevel: "F", aspectCategory: "Records & Documentation", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, reportingTimeline: "Maintained for life of device + 2 years", standard: "ISO 13485", descriptionOfRequirement: "Maintain DHR for each batch/lot of finished devices to demonstrate that the device is manufactured in accordance with the DHF.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.170 — Installation", citationSource: "21 CFR Part 820.170", jurisdictionLevel: "F", aspectCategory: "Validation & Installation", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, validationRequired: true, standard: "ISO 13485", descriptionOfRequirement: "Establish and maintain procedures for installation and inspection of devices to ensure proper installation.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.75 — Process Validation", citationSource: "21 CFR Part 820.75", jurisdictionLevel: "F", aspectCategory: "Validation & Installation", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, validationRequired: true, reportingTimeline: "Validate before production release; revalidate on changes", standard: "ISO 13485", descriptionOfRequirement: "Where results of a process cannot be fully verified by subsequent inspection and test, validate process with a high degree of assurance.", complianceStatus: "compliant" },
+        { requirementName: "FDA 21 CFR 820.22 — Quality Audit", citationSource: "21 CFR Part 820.22", jurisdictionLevel: "F", aspectCategory: "Internal Audit", regulatoryFramework: "FDA_21CFR_820", mdRegulatory: true, reportingTimeline: "At least annually", standard: "ISO 13485", descriptionOfRequirement: "Establish procedures for quality audits and conduct such audits to assure that the quality system is in conformity with the established quality system requirements.", complianceStatus: "compliant" },
+        // FDA Medical Device Reporting (MDR) — 21 CFR Part 803
+        { requirementName: "FDA MDR 803.50 — Reportable Events (30-Day)", citationSource: "21 CFR Part 803.50", jurisdictionLevel: "F", aspectCategory: "Regulatory Reporting", regulatoryFramework: "FDA_MDR", mdRegulatory: true, reportingTimeline: "30 calendar days from awareness", standard: "ISO 13485", descriptionOfRequirement: "Report to FDA within 30 calendar days after becoming aware of information that reasonably suggests that a device has caused or contributed to a serious injury or death.", complianceStatus: "compliant" },
+        { requirementName: "FDA MDR 803.53 — Five-Day Reports", citationSource: "21 CFR Part 803.53", jurisdictionLevel: "F", aspectCategory: "Regulatory Reporting", regulatoryFramework: "FDA_MDR", mdRegulatory: true, reportingTimeline: "5 business days", standard: "ISO 13485", descriptionOfRequirement: "Report within 5 business days if MDW requires remedial action or if FDA requests a 5-day report for an event type.", complianceStatus: "compliant" },
+        { requirementName: "FDA MDR 803.56 — Supplemental Reports", citationSource: "21 CFR Part 803.56", jurisdictionLevel: "F", aspectCategory: "Regulatory Reporting", regulatoryFramework: "FDA_MDR", mdRegulatory: true, reportingTimeline: "Within 1 year of initial MDR or as required", standard: "ISO 13485", descriptionOfRequirement: "Submit supplemental reports when additional information is obtained after initial MDR submission.", complianceStatus: "compliant" },
+        { requirementName: "FDA MDR — Annual Baseline Report (803.55)", citationSource: "21 CFR Part 803.55", jurisdictionLevel: "F", aspectCategory: "Regulatory Reporting", regulatoryFramework: "FDA_MDR", mdRegulatory: true, reportingTimeline: "January 1 each year", standard: "ISO 13485", descriptionOfRequirement: "Submit annual baseline report for each device type that had an MDR reportable event in the previous year.", complianceStatus: "compliant" },
+        // EU MDR 2017/745
+        { requirementName: "EU MDR Art. 87 — Serious Incident Reporting", citationSource: "EU MDR 2017/745 Art. 87", jurisdictionLevel: "F", aspectCategory: "Regulatory Reporting", regulatoryFramework: "EU_MDR", mdRegulatory: true, reportingTimeline: "Immediately / 15 days / 30 days depending on severity", standard: "ISO 13485", descriptionOfRequirement: "Report serious incidents and field safety corrective actions to national competent authorities in applicable EU member states.", complianceStatus: "compliant" },
+        { requirementName: "EU MDR Art. 83 — Post-Market Surveillance", citationSource: "EU MDR 2017/745 Art. 83", jurisdictionLevel: "F", aspectCategory: "Post-Market Surveillance", regulatoryFramework: "EU_MDR", mdRegulatory: true, reportingTimeline: "PMS Plan reviewed at least annually; PMCF as required", standard: "ISO 13485", descriptionOfRequirement: "Establish, implement, document, and maintain a PMS system proactively collecting and reviewing experience from devices placed on the market.", complianceStatus: "compliant" },
+        { requirementName: "EU MDR Art. 85-86 — PSUR / Periodic Safety Update", citationSource: "EU MDR 2017/745 Art. 85-86", jurisdictionLevel: "F", aspectCategory: "Post-Market Surveillance", regulatoryFramework: "EU_MDR", mdRegulatory: true, reportingTimeline: "Class I: when needed; Class IIa/IIb: at least every 2 years; Class III/implantable: annually", standard: "ISO 13485", descriptionOfRequirement: "Prepare and update PSUR summarizing the results and conclusions of the PMS data analysis and benefit-risk determination.", complianceStatus: "compliant" },
+        // ISO 13485 specific obligations
+        { requirementName: "ISO 13485 §4.2.5 — Record Retention (Medical Device Files)", citationSource: "ISO 13485:2016 §4.2.5", jurisdictionLevel: "V", aspectCategory: "Records & Documentation", regulatoryFramework: "ISO_13485", mdRegulatory: true, reportingTimeline: "Retain for lifetime of device or min. 5 years (10 years implantables)", standard: "ISO 13485", descriptionOfRequirement: "Establish and maintain records required by the standard; ensure accessibility for the duration defined.", complianceStatus: "compliant" },
+        { requirementName: "ISO 13485 §6.4.2 — Contamination Control", citationSource: "ISO 13485:2016 §6.4.2", jurisdictionLevel: "V", aspectCategory: "Manufacturing Controls", regulatoryFramework: "ISO_13485", mdRegulatory: true, standard: "ISO 13485", descriptionOfRequirement: "Document arrangements for controlling contaminated or potentially contaminated product.", complianceStatus: "compliant" },
+        { requirementName: "ISO 13485 §7.5.5 — Particular Requirements for Sterile Medical Devices", citationSource: "ISO 13485:2016 §7.5.5", jurisdictionLevel: "V", aspectCategory: "Sterility & Special Processes", regulatoryFramework: "ISO_13485", mdRegulatory: true, validationRequired: true, standard: "ISO 13485", descriptionOfRequirement: "Record process parameters, equipment, and personnel for each sterilization batch of sterile medical devices.", complianceStatus: "compliant" },
+        { requirementName: "ISO 13485 §8.2.2 — Complaint Handling", citationSource: "ISO 13485:2016 §8.2.2", jurisdictionLevel: "V", aspectCategory: "Complaint Handling", regulatoryFramework: "ISO_13485", mdRegulatory: true, reportingTimeline: "Review within 30 days; assess MDR/vigilance applicability", standard: "ISO 13485", descriptionOfRequirement: "Establish documented procedures for timely complaint handling; determine if complaint constitutes a reportable event.", complianceStatus: "compliant" },
+        { requirementName: "ISO 13485 §8.5.3 — Preventive Action", citationSource: "ISO 13485:2016 §8.5.3", jurisdictionLevel: "V", aspectCategory: "CAPA", regulatoryFramework: "ISO_13485", mdRegulatory: true, standard: "ISO 13485", descriptionOfRequirement: "Determine preventive action appropriate to prevent occurrence of potential nonconformities and communicate results to management review.", complianceStatus: "compliant" },
+      ];
+
+      const created = [];
+      let skipped = 0;
+      for (const item of MD_STARTER_LIBRARY) {
+        if (existingNames.has(item.requirementName)) { skipped++; continue; }
+        const parsed = insertIsoComplianceObligationSchema.safeParse({ ...item, userId, isoProjectId: isoProjectId ?? null });
+        if (parsed.success) {
+          const r = await storage.createIsoComplianceObligation(parsed.data);
+          created.push(r);
+          existingNames.add(item.requirementName);
+        }
+      }
+      res.status(201).json({ created, skipped });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }
