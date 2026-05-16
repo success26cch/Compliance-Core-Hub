@@ -2404,10 +2404,11 @@ const DOC_SUITE_TABS: { key: DocSuiteTab; label: string; icon: ComponentType<{ c
 interface APQPDocSuiteProps {
   projectId: number;
   project: { projectName: string; partNumber?: string | null; customer?: string | null };
+  defaultTab?: DocSuiteTab;
 }
 
-export function APQPDocSuite({ projectId, project }: APQPDocSuiteProps) {
-  const [activeTab, setActiveTab] = useState<DocSuiteTab>("ppap_elements");
+export function APQPDocSuite({ projectId, project, defaultTab }: APQPDocSuiteProps) {
+  const [activeTab, setActiveTab] = useState<DocSuiteTab>(defaultTab ?? "ppap_elements");
 
   return (
     <div className="flex flex-col h-full">

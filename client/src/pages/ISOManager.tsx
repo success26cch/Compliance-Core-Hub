@@ -27,7 +27,7 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
-  ScanSearch, Leaf, HardHat,
+  ScanSearch, Leaf, HardHat, Files,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -47,6 +47,7 @@ import IsoActionItemsModule from "./IsoActionItemsModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
 import APQPModule from "./APQPModule";
+import { APQPDocSuite } from "./APQPDocSuite";
 import SupplierModule from "./SupplierModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
 import ComplianceObligationsModule from "./ComplianceObligationsModule";
@@ -277,7 +278,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'ppap' | 'core_docs' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -287,6 +288,8 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   system_profile:    [null, undefined, 'librarian', 'trainer', 'auditor'],
   roles_raci:        [null, undefined, 'librarian', 'trainer', 'auditor'],
   apqp:              [null, undefined, 'librarian', 'trainer', 'auditor'],
+  ppap:              [null, undefined, 'librarian', 'trainer', 'auditor'],
+  core_docs:         [null, undefined, 'librarian', 'trainer', 'auditor'],
   communication:     [null, undefined, 'trainer', 'auditor'],
   training:          [null, undefined, 'trainer', 'auditor'],
   risk:              [null, undefined, 'auditor'],
@@ -320,6 +323,73 @@ const ROLE_UPGRADE_MSG: Partial<Record<SectionKey, string>> = {
   measurement:       "Measurement & Monitoring requires the Auditor tier.",
 };
 
+// ── Core Tool Shell: shared project picker for PPAP & Core Docs nav entries ──
+interface ApqpProjectBasic {
+  id: number; projectName: string; partNumber?: string; customer?: string;
+  currentPhase: number; status: string;
+}
+
+function CoreToolShell({ defaultTab, sharedProjectId, onProjectChange }: {
+  defaultTab: "ppap_elements" | "pfd";
+  sharedProjectId: number | null;
+  onProjectChange: (id: number | null) => void;
+}) {
+  const { data: projects = [], isLoading } = useQuery<ApqpProjectBasic[]>({
+    queryKey: ["/api/apqp-projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/apqp-projects", { credentials: "include" });
+      return res.json();
+    },
+  });
+  const selected = projects.find(p => p.id === sharedProjectId) ?? null;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="shrink-0 border-b border-border/40 bg-white dark:bg-slate-950 px-4 py-2 flex items-center gap-3">
+        <Layers className="w-4 h-4 text-accent shrink-0" />
+        <span className="text-xs text-muted-foreground shrink-0 font-medium">Program:</span>
+        {isLoading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+        ) : (
+          <Select
+            value={sharedProjectId ? String(sharedProjectId) : "__none__"}
+            onValueChange={v => onProjectChange(v === "__none__" ? null : parseInt(v, 10))}
+          >
+            <SelectTrigger className="h-7 text-xs max-w-[300px]" data-testid="select-core-tool-project">
+              <SelectValue placeholder="Select a program…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Select a program —</SelectItem>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={String(p.id)}>
+                  {p.projectName}{p.customer ? ` · ${p.customer}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {selected && (
+          <span className="text-xs text-muted-foreground hidden sm:block">
+            Phase {selected.currentPhase} · <span className="capitalize">{selected.status.replace(/_/g, " ")}</span>
+          </span>
+        )}
+      </div>
+      {!selected ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+          <Layers className="w-12 h-12 opacity-20" />
+          <div>
+            <p className="font-medium">No program selected</p>
+            <p className="text-sm opacity-70 mt-1">Choose an APQP program above to view its documents</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <APQPDocSuite projectId={selected.id} project={selected} defaultTab={defaultTab} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ISOManager() {
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
@@ -333,6 +403,10 @@ export default function ISOManager() {
   const [showWizard, setShowWizard] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>('context_org');
   const [isaDrawerOpen, setIsaDrawerOpen] = useState(false);
+  const [coreToolProjectId, setCoreToolProjectId] = useState<number | null>(() => {
+    const s = localStorage.getItem('cchub_core_tool_project');
+    return s ? parseInt(s, 10) : null;
+  });
   const [isaInitialPrompt, setIsaInitialPrompt] = useState<string | null>(null);
 
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
@@ -717,6 +791,34 @@ export default function ISOManager() {
               })}
             </div>
 
+            {/* Core Tools — APQP / PPAP / Core Docs */}
+            {sidebarOpen && (
+              <div className="pt-3 pb-1">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Core Tools</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
+              </div>
+            )}
+            {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
+            <div className="space-y-0.5">
+              {(["apqp", "ppap", "core_docs"] as SectionKey[]).map((section) => {
+                const META: Record<string, { icon: any; label: string }> = {
+                  apqp:      { icon: Layers,        label: "APQP Programs" },
+                  ppap:      { icon: ClipboardCheck, label: "PPAP" },
+                  core_docs: { icon: Files,          label: "Core Docs" },
+                };
+                const { icon, label } = META[section];
+                const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton key={section} active={activeSection === section}
+                    onClick={() => handleSectionChange(section)} icon={icon} label={label}
+                    testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
+                );
+              })}
+            </div>
+
             {/* EHS — ISO 14001 / ISO 45001 */}
             {sidebarOpen && (
               <div className="pt-3 pb-1">
@@ -767,10 +869,9 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["supplier_management","apqp","calibration","preventive_maintenance"] as SectionKey[]).map((section) => {
+              {(["supplier_management","calibration","preventive_maintenance"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   supplier_management:    { icon: Truck,   label: "Supplier Mgmt" },
-                  apqp:                   { icon: Layers,  label: "APQP / Programs" },
                   calibration:            { icon: Gauge,   label: "Calibration" },
                   preventive_maintenance: { icon: Wrench,  label: "Maintenance" },
                 };
@@ -952,6 +1053,22 @@ export default function ISOManager() {
             ) : activeSection === 'apqp' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <APQPModule isoProjectId={project?.id} />
+              </div>
+            ) : activeSection === 'ppap' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <CoreToolShell
+                  defaultTab="ppap_elements"
+                  sharedProjectId={coreToolProjectId}
+                  onProjectChange={id => { setCoreToolProjectId(id); if (id) localStorage.setItem('cchub_core_tool_project', String(id)); else localStorage.removeItem('cchub_core_tool_project'); }}
+                />
+              </div>
+            ) : activeSection === 'core_docs' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <CoreToolShell
+                  defaultTab="pfd"
+                  sharedProjectId={coreToolProjectId}
+                  onProjectChange={id => { setCoreToolProjectId(id); if (id) localStorage.setItem('cchub_core_tool_project', String(id)); else localStorage.removeItem('cchub_core_tool_project'); }}
+                />
               </div>
             ) : activeSection === 'nc' ? (
               <div className="flex-1 overflow-y-auto min-h-0">
@@ -3748,6 +3865,9 @@ function IsaEmptyState({
                 { icon: Mail, label: "Communication", desc: "Internal & external communications log", status: "soon", section: "communication" },
                 { icon: GraduationCap, label: "Training", desc: "Competency tracking & training records", status: "soon", section: "training" },
                 { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, metrics & performance data", status: "soon", section: "measurement" },
+                { icon: Layers, label: "APQP Programs", desc: "5-phase AIAG launch with gate reviews", status: "live", section: "apqp" },
+                { icon: ClipboardCheck, label: "PPAP", desc: "18-element AIAG PPAP 4th Edition tracker", status: "live", section: "ppap" },
+                { icon: Files, label: "Core Docs", desc: "PFD · PFMEA · Control Plan (linked)", status: "live", section: "core_docs" },
               ].map((mod) => (
                 <button
                   key={mod.label}
