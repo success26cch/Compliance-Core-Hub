@@ -1072,18 +1072,20 @@ ${rows.map(row => {
                             <ReviewBadge label="Process step was modified — verify this PFMEA row is still accurate" onClear={() => clearFlagMut.mutate(row.id)} />
                           )}
                           <div className="grid grid-cols-3 gap-3">
-                            <div>
+                            <div className="col-span-2">
                               <Label className="text-xs">Recommended Action(s)</Label>
-                              <Textarea value={val(row, "recommendedAction") ?? ""} onChange={e => update(row.id, "recommendedAction", e.target.value)} rows={2} className="text-xs" data-testid={`ta-action-${row.id}`} />
+                              <Textarea value={val(row, "recommendedAction") ?? ""} onChange={e => update(row.id, "recommendedAction", e.target.value)} rows={5} className="text-xs resize-y" placeholder="Describe the recommended corrective or preventive action, owner, and expected outcome…" data-testid={`ta-action-${row.id}`} />
                             </div>
-                            <div>
-                              <Label className="text-xs">Responsibility & Target Date</Label>
-                              <Input value={val(row, "responsibility") ?? ""} onChange={e => update(row.id, "responsibility", e.target.value)} className="h-7 text-xs mb-1" placeholder="Name / Dept" data-testid={`input-resp-${row.id}`} />
-                              <Input type="date" value={val(row, "targetDate") ?? ""} onChange={e => update(row.id, "targetDate", e.target.value)} className="h-7 text-xs" data-testid={`input-target-date-${row.id}`} />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Actions Taken</Label>
-                              <Textarea value={val(row, "actionTaken") ?? ""} onChange={e => update(row.id, "actionTaken", e.target.value)} rows={2} className="text-xs" data-testid={`ta-taken-${row.id}`} />
+                            <div className="space-y-2">
+                              <div>
+                                <Label className="text-xs">Responsibility & Target Date</Label>
+                                <Input value={val(row, "responsibility") ?? ""} onChange={e => update(row.id, "responsibility", e.target.value)} className="h-7 text-xs mb-1" placeholder="Name / Dept" data-testid={`input-resp-${row.id}`} />
+                                <Input type="date" value={val(row, "targetDate") ?? ""} onChange={e => update(row.id, "targetDate", e.target.value)} className="h-7 text-xs" data-testid={`input-target-date-${row.id}`} />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Actions Taken</Label>
+                                <Textarea value={val(row, "actionTaken") ?? ""} onChange={e => update(row.id, "actionTaken", e.target.value)} rows={3} className="text-xs resize-y" data-testid={`ta-taken-${row.id}`} />
+                              </div>
                             </div>
                           </div>
                           <div className="border-t border-border/30 pt-2">
