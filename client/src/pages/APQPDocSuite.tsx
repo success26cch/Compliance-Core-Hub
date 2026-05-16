@@ -533,10 +533,13 @@ function PfmeaTab({ projectId }: { projectId: number }) {
   };
 
   const createMut = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/apqp/${projectId}/pfmea-rows`, {
-      processStep: "New Step", processFunction: "", failureMode: "", failureEffect: "",
-      severity: 5, occurrence: 5, detection: 5, rpn: 125, rowOrder: rows.length,
-    }),
+    mutationFn: (stepData?: { processStepId: number; processStep: string }) =>
+      apiRequest("POST", `/api/apqp/${projectId}/pfmea-rows`, {
+        processStepId: stepData?.processStepId,
+        processStep: stepData?.processStep ?? "New Step",
+        processFunction: "", failureMode: "", failureEffect: "",
+        severity: 5, occurrence: 5, detection: 5, rpn: 125, rowOrder: rows.length,
+      }),
     onSuccess: () => { inv(); toast({ title: "Row added" }); },
   });
 
@@ -910,6 +913,44 @@ ${rows.map(row => {
           </Button>
         </div>
       </div>
+
+      {/* ── Step Coverage Banner ── */}
+      {steps.length > 0 && (() => {
+        const coveredIds = new Set(rows.map(r => r.processStepId).filter(Boolean));
+        const coveredCount = steps.filter(s => coveredIds.has(s.id)).length;
+        return (
+          <div className="flex items-center gap-2 flex-wrap px-3 py-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-border/50">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground shrink-0 mr-1">PFD Step Coverage</span>
+            {steps.map(step => {
+              const isCovered = coveredIds.has(step.id);
+              const fmCount = rows.filter(r => r.processStepId === step.id).length;
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => !isCovered && createMut.mutate({ processStepId: step.id, processStep: `${step.stepNumber} — ${step.operationName}` })}
+                  title={isCovered ? `Step ${step.stepNumber}: ${step.operationName} — ${fmCount} failure mode${fmCount !== 1 ? "s" : ""}` : `Step ${step.stepNumber}: ${step.operationName} — No PFMEA rows yet. Click to add one.`}
+                  disabled={isCovered || createMut.isPending}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                    isCovered
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-700 dark:text-emerald-400 cursor-default"
+                      : "bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer"
+                  }`}
+                  data-testid={`pfmea-coverage-step-${step.id}`}
+                >
+                  {isCovered
+                    ? <CheckCircle className="w-3 h-3 shrink-0" />
+                    : <Plus className="w-3 h-3 shrink-0" />}
+                  <span>{step.stepNumber}</span>
+                  {isCovered && fmCount > 1 && <span className="opacity-60">×{fmCount}</span>}
+                </button>
+              );
+            })}
+            <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+              {coveredCount}/{steps.length} steps covered
+            </span>
+          </div>
+        );
+      })()}
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
