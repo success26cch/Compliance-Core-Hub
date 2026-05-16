@@ -27,7 +27,7 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
-  ScanSearch, Leaf, HardHat, Files, FlaskConical,
+  ScanSearch, Leaf, HardHat, Files,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,7 +42,6 @@ import RiskAssessmentModule from "./RiskAssessmentModule";
 import MeasurementModule from "./MeasurementModule";
 import { CalibrationModule } from "./CalibrationModule";
 import { PreventiveMaintenanceModule } from "./PreventiveMaintenanceModule";
-import MdRegulatoryOverlay from "./MdRegulatoryOverlay";
 import ManagementReviewModule from "./ManagementReviewModule";
 import IsoActionItemsModule from "./IsoActionItemsModule";
 import CommunicationModule from "./CommunicationModule";
@@ -279,7 +278,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'ppap' | 'core_docs' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis' | 'md_regulatory';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'ppap' | 'core_docs' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -306,7 +305,6 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   compliance_calendar:      [null, undefined, 'auditor'],
   aspects_impacts:          [null, undefined, 'auditor'],
   hazard_analysis:          [null, undefined, 'auditor'],
-  md_regulatory:            [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -859,33 +857,6 @@ export default function ISOManager() {
               })()}
             </div>
 
-            {/* ISO 13485 — Medical Device Regulatory Overlay */}
-            {(project?.standard?.includes('13485') || isSuperadmin) && (
-              <>
-                {sidebarOpen && (
-                  <div className="pt-3 pb-1">
-                    <div className="flex items-center gap-2 px-1">
-                      <div className="h-px flex-1 bg-border/60" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Med Device</span>
-                      <div className="h-px flex-1 bg-border/60" />
-                    </div>
-                  </div>
-                )}
-                {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
-                <div className="space-y-0.5">
-                  {(() => {
-                    const locked = !canAccessSection('md_regulatory', isoRole, isSuperadmin);
-                    return (
-                      <ModuleNavButton active={activeSection === 'md_regulatory'}
-                        onClick={() => handleSectionChange('md_regulatory')}
-                        icon={FlaskConical} label="MD Regulatory"
-                        testId="nav-md-regulatory" locked={locked} collapsed={!sidebarOpen} />
-                    );
-                  })()}
-                </div>
-              </>
-            )}
-
             {/* Advanced Modules */}
             {sidebarOpen && (
               <div className="pt-3 pb-1">
@@ -1176,7 +1147,7 @@ export default function ISOManager() {
             ) : activeSection === 'compliance_obligations' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 {canAccessSection('compliance_obligations', isoRole, isSuperadmin)
-                  ? <ComplianceObligationsModule isoProjectId={project?.id} />
+                  ? <ComplianceObligationsModule isoProjectId={project?.id} project={project} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_obligations" /></div>}
               </div>
             ) : activeSection === 'compliance_calendar' ? (
@@ -1196,12 +1167,6 @@ export default function ISOManager() {
                 {canAccessSection('hazard_analysis', isoRole, isSuperadmin)
                   ? <HazardAnalysisModule />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="hazard_analysis" /></div>}
-              </div>
-            ) : activeSection === 'md_regulatory' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                {canAccessSection('md_regulatory', isoRole, isSuperadmin)
-                  ? <MdRegulatoryOverlay project={project} isoProjectId={project?.id} />
-                  : <div className="p-4 sm:p-6"><LockedModuleView section="md_regulatory" /></div>}
               </div>
             ) : (
               <>

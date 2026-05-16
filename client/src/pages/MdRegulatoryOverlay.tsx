@@ -445,7 +445,7 @@ function RegulatoryObligationsTab({ isoProjectId }: { isoProjectId: number | und
 
 // ─── Tab: Evidence Repository ─────────────────────────────────────────────────
 
-function EvidenceRepositoryTab({ isoProjectId }: { isoProjectId: number | undefined }) {
+export function EvidenceRepositoryTab({ isoProjectId }: { isoProjectId: number | undefined }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [filterType, setFilterType] = useState("all");
@@ -725,7 +725,7 @@ function EvidenceRepositoryTab({ isoProjectId }: { isoProjectId: number | undefi
 
 // ─── Tab: Regulatory Calendar ─────────────────────────────────────────────────
 
-function RegulatoryCalendarTab({ isoProjectId }: { isoProjectId: number | undefined }) {
+export function RegulatoryCalendarTab({ isoProjectId }: { isoProjectId: number | undefined }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [addDialog, setAddDialog] = useState(false);
@@ -877,7 +877,7 @@ function RegulatoryCalendarTab({ isoProjectId }: { isoProjectId: number | undefi
 
 // ─── Tab: Complaint Escalation ────────────────────────────────────────────────
 
-function ComplaintEscalationTab({ isoProjectId }: { isoProjectId: number | undefined }) {
+export function ComplaintEscalationTab({ isoProjectId }: { isoProjectId: number | undefined }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editDialog, setEditDialog] = useState<any | null>(null);

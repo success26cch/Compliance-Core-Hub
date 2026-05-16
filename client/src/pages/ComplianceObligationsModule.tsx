@@ -14,11 +14,17 @@ import {
   Plus, Pencil, Trash2, CheckCircle2, AlertTriangle, XCircle,
   Clock, FileText, ChevronDown, ChevronUp, BookOpen, Shield,
   Download, Upload, Filter, Search, ClipboardCheck, Sparkles, MapPin,
-  ArrowRight, Leaf, Scale, HelpCircle,
+  ArrowRight, Leaf, Scale, HelpCircle, FlaskConical, Database,
+  CalendarDays, AlertCircle, Loader2,
 } from "lucide-react";
-import type { IsoComplianceObligation, IsoComplianceEvaluation } from "@shared/schema";
+import type { IsoComplianceObligation, IsoComplianceEvaluation, IsoProject } from "@shared/schema";
 import ComplianceApplicabilityDialog from "@/components/iso/ComplianceApplicabilityDialog";
 import ComplianceEvaluationWizard from "@/components/iso/ComplianceEvaluationWizard";
+import {
+  EvidenceRepositoryTab,
+  RegulatoryCalendarTab,
+  ComplaintEscalationTab,
+} from "./MdRegulatoryOverlay";
 
 /* ─── Constants ─────────────────────────────────────────── */
 const ASPECT_CATEGORIES = [
@@ -1810,10 +1816,34 @@ const emptyEvaluation = (obligationId?: number): Partial<IsoComplianceEvaluation
 });
 
 /* ─── Main Component ─────────────────────────────────────── */
-export default function ComplianceObligationsModule({ isoProjectId }: { isoProjectId?: number }) {
+export default function ComplianceObligationsModule({
+  isoProjectId,
+  project,
+}: {
+  isoProjectId?: number;
+  project?: IsoProject | null;
+}) {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"register" | "evaluation">("register");
+  const isMedDevice = !!(project?.standard?.includes("13485"));
+
+  type TabKey = "register" | "evaluation" | "md_evidence" | "md_calendar" | "md_complaints";
+  const [activeTab, setActiveTab] = useState<TabKey>("register");
+
+  // Import MD starter library
+  const [mdImportLoading, setMdImportLoading] = useState(false);
+  async function importMdLibrary() {
+    setMdImportLoading(true);
+    try {
+      const body: any = {};
+      if (isoProjectId) body.isoProjectId = isoProjectId;
+      const r = await apiRequest("POST", "/api/iso-compliance-obligations/bulk-md", body) as any;
+      const data = typeof r.json === "function" ? await r.json() : r;
+      toast({ title: "MD Starter Library Imported", description: `${data.created?.length ?? 0} obligations added, ${data.skipped ?? 0} already present` });
+      qc.invalidateQueries({ queryKey: ["/api/iso-compliance-obligations"] });
+    } catch { toast({ title: "Import failed", variant: "destructive" }); }
+    setMdImportLoading(false);
+  }
 
   // Register filters
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -2117,6 +2147,11 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             <p className="text-sm text-muted-foreground">Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            {isMedDevice && (
+              <Button size="sm" variant="outline" className="gap-1.5 text-sm border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20" onClick={importMdLibrary} disabled={mdImportLoading} data-testid="button-import-md-library">
+                {mdImportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />} Import ISO 13485 Library
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="gap-1.5 text-sm border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
               <Sparkles className="w-4 h-4" /> Ask Corey to Identify
             </Button>
@@ -2185,16 +2220,21 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
       {/* Tabs */}
       <div className="border-b border-border/60 bg-white dark:bg-card px-6 shrink-0 mt-4">
-        <div className="flex gap-0">
+        <div className="flex gap-0 overflow-x-auto">
           {[
-            { key: "register", label: "Obligations Register", icon: FileText },
-            { key: "evaluation", label: "Evaluation Log", icon: ClipboardCheck },
+            { key: "register",      label: "Obligations Register", icon: FileText },
+            { key: "evaluation",    label: "Evaluation Log",       icon: ClipboardCheck },
+            ...(isMedDevice ? [
+              { key: "md_evidence",   label: "MD Evidence",          icon: Database },
+              { key: "md_calendar",   label: "MD Calendar",          icon: CalendarDays },
+              { key: "md_complaints", label: "MD Complaints",        icon: AlertCircle },
+            ] : []),
           ].map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key as any)}
               data-testid={`tab-compliance-${key}`}
-              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === key
                   ? "border-accent text-accent"
                   : "border-transparent text-muted-foreground hover:text-primary"
@@ -2202,6 +2242,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             >
               <Icon className="w-4 h-4" />
               {label}
+              {key.startsWith("md_") && <span className="text-[9px] bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold ml-0.5">ISO 13485</span>}
             </button>
           ))}
         </div>
@@ -3141,6 +3182,23 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── MD Tab Content Blocks (ISO 13485) ──────────────────── */}
+      {activeTab === "md_evidence" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <EvidenceRepositoryTab isoProjectId={isoProjectId} />
+        </div>
+      )}
+      {activeTab === "md_calendar" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <RegulatoryCalendarTab isoProjectId={isoProjectId} />
+        </div>
+      )}
+      {activeTab === "md_complaints" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ComplaintEscalationTab isoProjectId={isoProjectId} />
+        </div>
+      )}
 
       {/* ── Ask Corey — Identify Requirements by Jurisdiction ─── */}
       <Dialog open={coreyDialog} onOpenChange={open => {
