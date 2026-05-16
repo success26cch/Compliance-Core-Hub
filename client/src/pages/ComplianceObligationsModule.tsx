@@ -68,9 +68,12 @@ const EVAL_STATUS_OPTIONS = [
 ];
 
 const STANDARD_OPTIONS = [
-  { value: "ISO 14001", label: "ISO 14001 — EMS", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
-  { value: "ISO 45001", label: "ISO 45001 — OH&S", color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300" },
-  { value: "Both", label: "Both Standards", color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300" },
+  { value: "ISO 14001",       label: "ISO 14001 — EMS",               color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { value: "ISO 45001",       label: "ISO 45001 — OH&S",              color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300" },
+  { value: "Both",            label: "Both EMS & OH&S",               color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300" },
+  { value: "ISO 13485",       label: "ISO 13485 — Medical Devices",   color: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300" },
+  { value: "FDA 21 CFR 820",  label: "FDA 21 CFR 820 — QSR",          color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300" },
+  { value: "EU MDR 2017/745", label: "EU MDR 2017/745",               color: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-900/20 dark:text-fuchsia-300" },
 ];
 
 /* ─── Federal starter library (from examples) ─────────────── */
