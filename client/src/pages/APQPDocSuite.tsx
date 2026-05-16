@@ -2411,9 +2411,9 @@ export function APQPDocSuite({ projectId, project, defaultTab }: APQPDocSuitePro
   const [activeTab, setActiveTab] = useState<DocSuiteTab>(defaultTab ?? "ppap_elements");
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Sub-tab bar */}
-      <div className="shrink-0 border-b border-border/40 bg-white dark:bg-slate-950 px-4 pt-3 pb-0">
+    <div className="flex flex-col">
+      {/* Sub-tab bar — sticky so it stays visible while the content below scrolls */}
+      <div className="sticky top-0 z-20 shrink-0 border-b border-border/40 bg-white dark:bg-slate-950 px-4 pt-3 pb-0">
         <div className="flex items-end gap-1 overflow-x-auto">
           {DOC_SUITE_TABS.map(tab => {
             const Icon = tab.icon;
@@ -2437,8 +2437,8 @@ export function APQPDocSuite({ projectId, project, defaultTab }: APQPDocSuitePro
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Content — no overflow constraint here; scrolling is owned by the parent */}
+      <div>
         {activeTab === "ppap_elements" && <PPAPElementsTab projectId={projectId} onNavigate={setActiveTab} />}
         {activeTab === "pfd"           && <ProcessFlowTab projectId={projectId} />}
         {activeTab === "pfmea"         && <PfmeaTab projectId={projectId} />}

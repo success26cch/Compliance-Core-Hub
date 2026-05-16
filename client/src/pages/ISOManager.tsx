@@ -382,7 +382,7 @@ function CoreToolShell({ defaultTab, sharedProjectId, onProjectChange }: {
           </div>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto">
           <APQPDocSuite projectId={selected.id} project={selected} defaultTab={defaultTab} />
         </div>
       )}
