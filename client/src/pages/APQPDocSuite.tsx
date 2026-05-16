@@ -527,6 +527,17 @@ function PfmeaTab({ projectId }: { projectId: number }) {
     queryFn: async () => { const r = await fetch(`/api/apqp/${projectId}/pfmea-rows`, { credentials: "include" }); return r.json(); },
   });
 
+  // Sort rows by their PFD step's position so newly-added rows appear in sequence
+  const sortedRows = [...rows].sort((a, b) => {
+    const ai = steps.findIndex(s => s.id === a.processStepId);
+    const bi = steps.findIndex(s => s.id === b.processStepId);
+    if (ai === -1 && bi === -1) return (a.rowOrder ?? 0) - (b.rowOrder ?? 0);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    if (ai !== bi) return ai - bi;
+    return (a.rowOrder ?? 0) - (b.rowOrder ?? 0);
+  });
+
   const inv = () => {
     qc.invalidateQueries({ queryKey: ["/api/apqp", projectId, "pfmea-rows"] });
     qc.invalidateQueries({ queryKey: ["/api/apqp", projectId, "control-plan-rows"] });
@@ -992,7 +1003,7 @@ ${rows.map(row => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {rows.map(row => {
+              {sortedRows.map(row => {
                 const s = Number(val(row, "severity"));
                 const o = Number(val(row, "occurrence"));
                 const d = Number(val(row, "detection"));
