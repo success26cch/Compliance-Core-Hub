@@ -1830,6 +1830,7 @@ export default function ComplianceObligationsModule({
   const { user } = useAuth();
   const isSuperadmin = !!(user as any)?.claims?.isSuperadmin;
   const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
+  const isEHS = !!(project?.standard?.includes("14001") || project?.standard?.includes("45001"));
 
   type TabKey = "register" | "evaluation" | "md_evidence";
   const [activeTab, setActiveTab] = useState<TabKey>("register");
@@ -2145,10 +2146,24 @@ export default function ComplianceObligationsModule({
           <div>
             <div className="flex items-center gap-2.5 mb-1">
               <Shield className="w-6 h-6 text-accent" />
-              <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 6.1.3 + 9.1.2</Badge>
+              <h1 className="text-xl font-black text-primary">
+                {isMedDevice && !isEHS
+                  ? "Medical Device Regulatory Compliance Register"
+                  : isMedDevice && isEHS
+                  ? "Regulatory Compliance Register"
+                  : "Compliance Obligations Register"}
+              </h1>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">
+                {isMedDevice && !isEHS ? "ISO 13485 §4.2.3 + §8.2.2" : "ISO 6.1.3 + 9.1.2"}
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope.</p>
+            <p className="text-sm text-muted-foreground">
+              {isMedDevice && !isEHS
+                ? "FDA 21 CFR Part 820, EU MDR 2017/745, and ISO 13485 regulatory obligations applicable to your medical device quality management system."
+                : isMedDevice && isEHS
+                ? "Legal and other requirements covering EHS obligations (ISO 14001 / ISO 45001) and medical device regulations (ISO 13485 / FDA 21 CFR 820 / EU MDR) applicable to your organization."
+                : "Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope."}
+            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             {isMedDevice && (

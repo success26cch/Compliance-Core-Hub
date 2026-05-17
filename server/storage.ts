@@ -2916,12 +2916,16 @@ export class DatabaseStorage implements IStorage {
 
   // ─── ISO Compliance Obligations (6.1.3) ──────────────────────────────────
   async getIsoComplianceObligations(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoComplianceObligation[]> {
+    const { or, isNull } = await import("drizzle-orm");
     let cond: any;
     if (isSuperadmin) {
-      cond = isoProjectId != null ? eq(isoComplianceObligations.isoProjectId, isoProjectId) : undefined;
+      // For superadmin: return items for the project OR items with no project (global/orphaned items)
+      cond = isoProjectId != null
+        ? or(eq(isoComplianceObligations.isoProjectId, isoProjectId), isNull(isoComplianceObligations.isoProjectId))
+        : undefined;
     } else {
       cond = isoProjectId != null
-        ? and(eq(isoComplianceObligations.userId, userId), eq(isoComplianceObligations.isoProjectId, isoProjectId))
+        ? and(eq(isoComplianceObligations.userId, userId), or(eq(isoComplianceObligations.isoProjectId, isoProjectId), isNull(isoComplianceObligations.isoProjectId)))
         : eq(isoComplianceObligations.userId, userId);
     }
     return db.select().from(isoComplianceObligations).where(cond).orderBy(isoComplianceObligations.aspectCategory, isoComplianceObligations.requirementName);
