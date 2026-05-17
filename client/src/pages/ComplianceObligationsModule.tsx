@@ -1845,6 +1845,24 @@ export default function ComplianceObligationsModule({
   const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
   const isEHS = !!(project?.standard?.includes("14001") || project?.standard?.includes("45001"));
 
+  // Derive which regulatory standard options are in scope from the System Profile.
+  // isSuperadmin sees all (demo account). Everyone else only sees what their profile covers.
+  const inScopeStandards = useMemo(() => {
+    if (isSuperadmin) return new Set(STANDARD_OPTIONS.map(s => s.value));
+    const std = project?.standard ?? "";
+    const s = new Set<string>();
+    if (std.includes("14001")) s.add("ISO 14001");
+    if (std.includes("45001")) s.add("ISO 45001");
+    if (std.includes("14001") && std.includes("45001")) s.add("Both");
+    if (std.includes("13485")) { s.add("FDA 21 CFR 820 — QSR"); s.add("EU MDR 2017/745"); }
+    return s;
+  }, [project?.standard, isSuperadmin]);
+
+  // Only present filter options that are relevant to this company's scope
+  const activeStandardOptions = useMemo(
+    () => STANDARD_OPTIONS.filter(s => inScopeStandards.has(s.value)),
+    [inScopeStandards]);
+
   type TabKey = "register" | "evaluation" | "md_evidence";
   const [activeTab, setActiveTab] = useState<TabKey>("register");
 
@@ -1893,16 +1911,15 @@ export default function ComplianceObligationsModule({
     }
   }, [filterStandard, isMedDevice, isEHS]);
 
-  // Scoped obligations & evaluations — respect the active standard filter
+  // Scoped obligations & evaluations — always start from inScopeObligations, then filter by active standard
   const scopedObligationsForEval = useMemo(() =>
-    filterStandard === "all" ? obligations : obligations.filter(o => o.standard === filterStandard),
-    [obligations, filterStandard]);
+    filterStandard === "all" ? inScopeObligations : inScopeObligations.filter(o => o.standard === filterStandard),
+    [inScopeObligations, filterStandard]);
 
   const visibleEvals = useMemo(() => {
-    if (filterStandard === "all") return evaluations;
     const ids = new Set(scopedObligationsForEval.map(o => o.id));
     return evaluations.filter(ev => ids.has(ev.complianceObligationId));
-  }, [evaluations, filterStandard, scopedObligationsForEval]);
+  }, [evaluations, scopedObligationsForEval]);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   // Dialogs
@@ -2015,9 +2032,15 @@ export default function ComplianceObligationsModule({
     onError: () => toast({ title: "Error", description: "Could not load starter library", variant: "destructive" }),
   });
 
-  // Filtered obligations
+  // Obligations that are within this company's scope (per System Profile standard)
+  const inScopeObligations = useMemo(
+    () => obligations.filter(o => !o.standard || inScopeStandards.has(o.standard)),
+    [obligations, inScopeStandards]);
+
+  // Filtered obligations — always scoped to the company's registered standards first,
+  // then narrowed further by the user's active filter selections
   const filteredObligations = useMemo(() => {
-    return obligations.filter(o => {
+    return inScopeObligations.filter(o => {
       if (filterCategory !== "all" && o.aspectCategory !== filterCategory) return false;
       if (filterJurisdiction !== "all" && o.jurisdictionLevel !== filterJurisdiction) return false;
       if (filterStatus !== "all" && o.complianceStatus !== filterStatus) return false;
@@ -2033,15 +2056,15 @@ export default function ComplianceObligationsModule({
       }
       return true;
     });
-  }, [obligations, filterCategory, filterJurisdiction, filterStatus, filterStandard, searchText]);
+  }, [inScopeObligations, filterCategory, filterJurisdiction, filterStatus, filterStandard, searchText]);
 
-  // Summary counts
+  // Summary counts — based on in-scope obligations only
   const counts = useMemo(() => ({
-    total: obligations.length,
-    compliant: obligations.filter(o => o.complianceStatus === "compliant").length,
-    nonCompliant: obligations.filter(o => o.complianceStatus === "non_compliant").length,
-    underReview: obligations.filter(o => o.complianceStatus === "under_review").length,
-  }), [obligations]);
+    total: inScopeObligations.length,
+    compliant: inScopeObligations.filter(o => o.complianceStatus === "compliant").length,
+    nonCompliant: inScopeObligations.filter(o => o.complianceStatus === "non_compliant").length,
+    underReview: inScopeObligations.filter(o => o.complianceStatus === "under_review").length,
+  }), [inScopeObligations]);
 
   // Build state-filtered starter groups — only show state reqs that match the org's state
   const { groupsWithOffsets, allStarters } = useMemo(() => {
@@ -2345,10 +2368,10 @@ export default function ComplianceObligationsModule({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Standards</SelectItem>
-                {STANDARD_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                {activeStandardOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground ml-auto">{filteredObligations.length} of {obligations.length}</span>
+            <span className="text-sm text-muted-foreground ml-auto">{filteredObligations.length} of {inScopeObligations.length}</span>
           </div>
 
           <ScrollArea className="flex-1">
@@ -2676,7 +2699,7 @@ export default function ComplianceObligationsModule({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STANDARD_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    {activeStandardOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
