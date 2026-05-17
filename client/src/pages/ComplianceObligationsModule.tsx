@@ -68,12 +68,11 @@ const EVAL_STATUS_OPTIONS = [
 ];
 
 const STANDARD_OPTIONS = [
-  { value: "ISO 14001",       label: "ISO 14001 — EMS",               color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
-  { value: "ISO 45001",       label: "ISO 45001 — OH&S",              color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300" },
-  { value: "Both",            label: "Both EMS & OH&S",               color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300" },
-  { value: "ISO 13485",       label: "ISO 13485 — Medical Devices",   color: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300" },
-  { value: "FDA 21 CFR 820",  label: "FDA 21 CFR 820 — QSR",          color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300" },
-  { value: "EU MDR 2017/745", label: "EU MDR 2017/745",               color: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-900/20 dark:text-fuchsia-300" },
+  { value: "ISO 14001",            label: "ISO 14001 — EMS",          color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { value: "ISO 45001",            label: "ISO 45001 — OH&S",         color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300" },
+  { value: "Both",                 label: "Both EMS & OH&S",          color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300" },
+  { value: "FDA 21 CFR 820 — QSR", label: "FDA 21 CFR 820 — QSR",    color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300" },
+  { value: "EU MDR 2017/745",      label: "EU MDR 2017/745",          color: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-900/20 dark:text-fuchsia-300" },
 ];
 
 /* ─── Federal starter library (from examples) ─────────────── */
@@ -2146,29 +2145,21 @@ export default function ComplianceObligationsModule({
           <div>
             <div className="flex items-center gap-2.5 mb-1">
               <Shield className="w-6 h-6 text-accent" />
-              <h1 className="text-xl font-black text-primary">
-                {isMedDevice && !isEHS
-                  ? "Medical Device Regulatory Compliance Register"
-                  : isMedDevice && isEHS
-                  ? "Regulatory Compliance Register"
-                  : "Compliance Obligations Register"}
-              </h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">
-                {isMedDevice && !isEHS ? "ISO 13485 §4.2.3 + §8.2.2" : "ISO 6.1.3 + 9.1.2"}
-              </Badge>
+              <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 6.1.3 + 9.1.2</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {isMedDevice && !isEHS
-                ? "FDA 21 CFR Part 820, EU MDR 2017/745, and ISO 13485 regulatory obligations applicable to your medical device quality management system."
-                : isMedDevice && isEHS
-                ? "Legal and other requirements covering EHS obligations (ISO 14001 / ISO 45001) and medical device regulations (ISO 13485 / FDA 21 CFR 820 / EU MDR) applicable to your organization."
+              {isMedDevice && isEHS
+                ? "Legal and other requirements — external legal obligations including EHS regulations (ISO 14001 / ISO 45001) and medical device laws (FDA 21 CFR 820 / EU MDR 2017/745) applicable to your organization."
+                : isMedDevice
+                ? "Legal and other requirements — external laws and regulations applicable to medical device manufacturers, including FDA 21 CFR Part 820 and EU MDR 2017/745."
                 : "Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope."}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             {isMedDevice && (
               <Button size="sm" variant="outline" className="gap-1.5 text-sm border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20" onClick={importMdLibrary} disabled={mdImportLoading} data-testid="button-import-md-library">
-                {mdImportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />} Import ISO 13485 Library
+                {mdImportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />} Import MD Regulatory Library
               </Button>
             )}
             <Button size="sm" variant="outline" className="gap-1.5 text-sm border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
