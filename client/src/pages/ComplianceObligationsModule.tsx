@@ -27,6 +27,7 @@ import {
 
 /* ─── Constants ─────────────────────────────────────────── */
 const ASPECT_CATEGORIES = [
+  // EHS — Environmental (ISO 14001)
   "Material Use/Exposure",
   "Solid & Liquid Waste",
   "Oil Management & Spillage",
@@ -36,10 +37,23 @@ const ASPECT_CATEGORIES = [
   "Chemical Reporting",
   "Emergency Planning",
   "Hazardous Materials Transport",
-  "Health and Safety Requirements",
-  "Other Applicable Requirements",
   "Energy",
   "Land/Soil Contamination",
+  // EHS — Safety (ISO 45001)
+  "Health and Safety Requirements",
+  "Other Applicable Requirements",
+  // Medical Device Regulatory (FDA / EU MDR)
+  "Regulatory Submission",
+  "Regulatory Reporting",
+  "Complaint Handling",
+  "CAPA",
+  "Records & Documentation",
+  "Validation & Installation",
+  "Supplier Management",
+  "Internal Audit",
+  "Post-Market Surveillance",
+  "Manufacturing Controls",
+  // Universal
   "Other",
 ];
 
@@ -1856,6 +1870,39 @@ export default function ComplianceObligationsModule({
   const [filterStandard, setFilterStandard] = useState<string>("all");
   const [starterLibStandard, setStarterLibStandard] = useState<"all" | "ISO 14001" | "ISO 45001">("all");
   const [searchText, setSearchText] = useState("");
+
+  // Context labels that change based on the active standard filter
+  const registerCtx = useMemo(() => {
+    switch (filterStandard) {
+      case "ISO 14001":
+        return { description: "Legal and other requirements — Environmental Management System (ISO 14001) obligations applicable to your organization's scope.", evalClause: "ISO 14001 §9.1.2", evalEmpty: "ISO 14001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your environmental audit trail." };
+      case "ISO 45001":
+        return { description: "Legal and other requirements — Occupational Health & Safety (ISO 45001) obligations applicable to your organization's scope.", evalClause: "ISO 45001 §9.1.2", evalEmpty: "ISO 45001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your OH&S audit trail." };
+      case "Both":
+        return { description: "Legal and other requirements — EHS obligations covering both Environmental (ISO 14001) and Occupational Health & Safety (ISO 45001).", evalClause: "ISO 14001/45001 §9.1.2", evalEmpty: "Log evaluation records for your EHS compliance obligations. ISO 14001/45001 §9.1.2 requires documented evidence of periodic evaluation." };
+      case "FDA 21 CFR 820 — QSR":
+        return { description: "Legal and other requirements — US Food & Drug Administration Quality System Regulation (21 CFR Part 820) obligations for medical device manufacturers.", evalClause: "21 CFR 820.22 / FDA QSR", evalEmpty: "Log periodic compliance evaluations against your FDA 21 CFR 820 obligations. FDA 820.22 requires documented quality audit records as part of QSR compliance." };
+      case "EU MDR 2017/745":
+        return { description: "Legal and other requirements — EU Medical Device Regulation 2017/745 obligations for medical devices placed on the European market.", evalClause: "EU MDR Art. 83 / PMCF", evalEmpty: "Log compliance evaluations for your EU MDR obligations. Post-market surveillance and vigilance evaluations are required under EU MDR Art. 83 and Art. 87." };
+      default:
+        if (isMedDevice && isEHS)
+          return { description: "Legal and other requirements — external legal obligations including EHS regulations (ISO 14001 / ISO 45001) and medical device laws (FDA 21 CFR 820 / EU MDR 2017/745) applicable to your organization.", evalClause: "ISO §9.1.2 / FDA 820.22", evalEmpty: "Log compliance evaluation records for your obligations. Use the standard filter to scope evaluations to a specific regulatory framework." };
+        if (isMedDevice)
+          return { description: "Legal and other requirements — external laws and regulations applicable to medical device manufacturers, including FDA 21 CFR Part 820 and EU MDR 2017/745.", evalClause: "FDA 820.22 / EU MDR Art. 83", evalEmpty: "Log periodic compliance evaluations against your medical device regulatory obligations (FDA 21 CFR 820, EU MDR). Use the filter above to scope by regulatory framework." };
+        return { description: "Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope.", evalClause: "ISO 14001 §9.1.2", evalEmpty: "ISO 14001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail." };
+    }
+  }, [filterStandard, isMedDevice, isEHS]);
+
+  // Scoped obligations & evaluations — respect the active standard filter
+  const scopedObligationsForEval = useMemo(() =>
+    filterStandard === "all" ? obligations : obligations.filter(o => o.standard === filterStandard),
+    [obligations, filterStandard]);
+
+  const visibleEvals = useMemo(() => {
+    if (filterStandard === "all") return evaluations;
+    const ids = new Set(scopedObligationsForEval.map(o => o.id));
+    return evaluations.filter(ev => ids.has(ev.complianceObligationId));
+  }, [evaluations, filterStandard, scopedObligationsForEval]);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   // Dialogs
@@ -2148,13 +2195,7 @@ export default function ComplianceObligationsModule({
               <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
               <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 6.1.3 + 9.1.2</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {isMedDevice && isEHS
-                ? "Legal and other requirements — external legal obligations including EHS regulations (ISO 14001 / ISO 45001) and medical device laws (FDA 21 CFR 820 / EU MDR 2017/745) applicable to your organization."
-                : isMedDevice
-                ? "Legal and other requirements — external laws and regulations applicable to medical device manufacturers, including FDA 21 CFR Part 820 and EU MDR 2017/745."
-                : "Legal and other requirements — EHS obligations (ISO 14001 Environmental + ISO 45001 OH&S) applicable to your organization's scope."}
-            </p>
+            <p className="text-sm text-muted-foreground">{registerCtx.description}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             {isMedDevice && (
@@ -2510,12 +2551,15 @@ export default function ComplianceObligationsModule({
                 <SelectValue placeholder="All Requirements" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Requirements</SelectItem>
-                {obligations.map(o => (
+                <SelectItem value="all">{filterStandard === "all" ? "All Requirements" : `All ${filterStandard} Requirements`}</SelectItem>
+                {scopedObligationsForEval.map(o => (
                   <SelectItem key={o.id} value={String(o.id)}>{o.requirementName}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {filterStandard !== "all" && (
+              <span className="text-xs text-muted-foreground">Scoped to: <strong>{filterStandard}</strong></span>
+            )}
             <Button
               size="sm"
               className="gap-1.5 text-xs bg-accent hover:bg-accent/90 text-white ml-auto"
@@ -2527,18 +2571,18 @@ export default function ComplianceObligationsModule({
           </div>
 
           <ScrollArea className="flex-1">
-            {evaluations.length === 0 ? (
+            {visibleEvals.length === 0 ? (
               <div className="p-12 text-center">
                 <ClipboardCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
                 <p className="text-base font-semibold text-muted-foreground mb-1">No evaluations logged</p>
-                <p className="text-sm text-muted-foreground mb-4">ISO 14001 9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail.</p>
+                <p className="text-sm text-muted-foreground mb-4">{registerCtx.evalEmpty}</p>
                 <Button size="sm" variant="outline" className="gap-1.5 text-sm" onClick={() => openAddEvaluation()}>
                   <Plus className="w-4 h-4" /> Log First Evaluation
                 </Button>
               </div>
             ) : (
               <div className="divide-y divide-border/40">
-                {evaluations.map(ev => (
+                {visibleEvals.map(ev => (
                   <div key={ev.id} className="px-6 py-5 hover:bg-muted/20 transition-colors" data-testid={`row-evaluation-${ev.id}`}>
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -2615,7 +2659,7 @@ export default function ComplianceObligationsModule({
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold">Environmental Aspect Category</Label>
+                <Label className="text-xs font-semibold">Regulatory Category</Label>
                 <Select value={obligationForm.aspectCategory ?? "Other"} onValueChange={v => setObligationForm(f => ({ ...f, aspectCategory: v }))}>
                   <SelectTrigger className="mt-1" data-testid="select-obligation-category">
                     <SelectValue />
