@@ -11812,12 +11812,27 @@ ${sectorGuidance}`;
       let skipped = 0;
       for (const item of MD_STARTER_LIBRARY) {
         if (existingNames.has(item.requirementName)) { skipped++; continue; }
-        const parsed = insertIsoComplianceObligationSchema.safeParse({ ...item, userId, isoProjectId: isoProjectId ?? null });
-        if (parsed.success) {
-          const r = await storage.createIsoComplianceObligation(parsed.data);
-          created.push(r);
-          existingNames.add(item.requirementName);
-        }
+        const insertData: any = {
+          userId,
+          isoProjectId: isoProjectId ?? null,
+          requirementName: item.requirementName,
+          citationSource: item.citationSource ?? null,
+          jurisdictionLevel: item.jurisdictionLevel ?? "F",
+          aspectCategory: item.aspectCategory ?? "Other",
+          descriptionOfRequirement: item.descriptionOfRequirement ?? null,
+          complianceStatus: item.complianceStatus ?? "compliant",
+          standard: item.standard ?? "ISO 13485",
+          mdRegulatory: (item as any).mdRegulatory ?? true,
+          regulatoryFramework: (item as any).regulatoryFramework ?? null,
+          reportingTimeline: (item as any).reportingTimeline ?? null,
+          validationRequired: (item as any).validationRequired ?? false,
+          permitRequired: false,
+          facilityAction: (item as any).facilityAction ?? null,
+          recordsToMaintain: (item as any).recordsToMaintain ?? null,
+        };
+        const r = await storage.createIsoComplianceObligation(insertData);
+        created.push(r);
+        existingNames.add(item.requirementName);
       }
       res.status(201).json({ created, skipped });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
