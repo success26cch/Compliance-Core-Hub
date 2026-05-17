@@ -1501,17 +1501,31 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
                 <motion.div key={`p1-${p1Step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                   {p1Step === 0 && (
                     <div>
-                      <p className="text-lg font-black text-primary mb-1">Which ISO standard are you building toward?</p>
-                      <p className="text-sm text-muted-foreground mb-5">This determines which clauses and requirements we'll map your organization to.</p>
+                      <p className="text-lg font-black text-primary mb-1">Which management standards apply to your organization?</p>
+                      <p className="text-sm text-muted-foreground mb-5">Select all that apply. Your selection determines which clauses, modules, and regulatory frameworks are available across the platform.</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {WIZARD_STANDARDS.map(s => (
-                          <button key={s} onClick={() => setStandard(s)}
-                            className={`p-3 rounded-xl border-2 text-left transition-all ${standard === s ? "border-accent bg-accent/5 text-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
-                            data-testid={`button-wizard-standard-${s.replace(/[\s/]/g, "-").toLowerCase()}`}>
-                            <span className="text-sm font-bold">{s}</span>
-                          </button>
-                        ))}
+                        {WIZARD_STANDARDS.map(s => {
+                          const selected = standard.split(", ").filter(Boolean).includes(s);
+                          return (
+                            <button key={s}
+                              onClick={() => {
+                                const current = standard.split(", ").filter(Boolean);
+                                const next = selected ? current.filter(x => x !== s) : [...current, s];
+                                setStandard(next.join(", "));
+                              }}
+                              className={`p-3 rounded-xl border-2 text-left transition-all flex items-center justify-between gap-2 ${selected ? "border-accent bg-accent/5 text-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                              data-testid={`button-wizard-standard-${s.replace(/[\s/]/g, "-").toLowerCase()}`}>
+                              <span className="text-sm font-bold">{s}</span>
+                              {selected && <CheckCircle2 className="w-4 h-4 shrink-0 text-accent" />}
+                            </button>
+                          );
+                        })}
                       </div>
+                      {standard && (
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Selected: <span className="font-semibold text-accent">{standard}</span>
+                        </p>
+                      )}
                     </div>
                   )}
                   {p1Step === 1 && (
@@ -3319,9 +3333,9 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
             <div>
               <h1 className="text-xl font-black text-primary">{project.orgName || "My Organization"}</h1>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                {project.standard && (
-                  <span className="text-[11px] bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{project.standard}</span>
-                )}
+                {project.standard && project.standard.split(", ").filter(Boolean).map(s => (
+                  <span key={s} className="text-[11px] bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{s}</span>
+                ))}
                 {project.status === "complete" && (
                   <span className="text-[11px] bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30 rounded px-2 py-0.5 font-bold">Setup Complete</span>
                 )}
@@ -3360,9 +3374,13 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
                 </div>
               )}
               {project.standard && (
-                <div className="flex items-center gap-4 px-5 py-3">
-                  <span className="text-xs text-muted-foreground w-36 shrink-0">ISO Standard</span>
-                  <span className="text-sm font-bold text-accent">{project.standard}</span>
+                <div className="flex items-start gap-4 px-5 py-3">
+                  <span className="text-xs text-muted-foreground w-36 shrink-0 pt-0.5">Management Standard(s)</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.standard.split(", ").filter(Boolean).map(s => (
+                      <span key={s} className="text-xs bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{s}</span>
+                    ))}
+                  </div>
                 </div>
               )}
               {project.totalEmployees && (
