@@ -1911,15 +1911,6 @@ export default function ComplianceObligationsModule({
     }
   }, [filterStandard, isMedDevice, isEHS]);
 
-  // Scoped obligations & evaluations — always start from inScopeObligations, then filter by active standard
-  const scopedObligationsForEval = useMemo(() =>
-    filterStandard === "all" ? inScopeObligations : inScopeObligations.filter(o => o.standard === filterStandard),
-    [inScopeObligations, filterStandard]);
-
-  const visibleEvals = useMemo(() => {
-    const ids = new Set(scopedObligationsForEval.map(o => o.id));
-    return evaluations.filter(ev => ids.has(ev.complianceObligationId));
-  }, [evaluations, scopedObligationsForEval]);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   // Dialogs
@@ -1969,6 +1960,21 @@ export default function ComplianceObligationsModule({
       return fetch(`/api/iso-compliance-evaluations${qstr}`, { credentials: "include" }).then(r => r.json());
     },
   });
+
+  // Obligations within this company's scope (per System Profile standard)
+  const inScopeObligations = useMemo(
+    () => obligations.filter(o => !o.standard || inScopeStandards.has(o.standard)),
+    [obligations, inScopeStandards]);
+
+  // Scoped obligations & evaluations — always start from inScopeObligations, then filter by active standard
+  const scopedObligationsForEval = useMemo(() =>
+    filterStandard === "all" ? inScopeObligations : inScopeObligations.filter(o => o.standard === filterStandard),
+    [inScopeObligations, filterStandard]);
+
+  const visibleEvals = useMemo(() => {
+    const ids = new Set(scopedObligationsForEval.map(o => o.id));
+    return evaluations.filter(ev => ids.has(ev.complianceObligationId));
+  }, [evaluations, scopedObligationsForEval]);
 
   const { data: companyProfile } = useQuery<any>({
     queryKey: ["/api/company-profile"],
@@ -2031,11 +2037,6 @@ export default function ComplianceObligationsModule({
     },
     onError: () => toast({ title: "Error", description: "Could not load starter library", variant: "destructive" }),
   });
-
-  // Obligations that are within this company's scope (per System Profile standard)
-  const inScopeObligations = useMemo(
-    () => obligations.filter(o => !o.standard || inScopeStandards.has(o.standard)),
-    [obligations, inScopeStandards]);
 
   // Filtered obligations — always scoped to the company's registered standards first,
   // then narrowed further by the user's active filter selections
