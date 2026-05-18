@@ -593,10 +593,10 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project, isMedDevic
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Complaint Category (§8.2)</Label>
-                    <Select value={(formData as any).mdComplaintCategory ?? ""} onValueChange={v => setFormData({ ...formData, mdComplaintCategory: v } as any)}>
+                    <Select value={(formData as any).mdComplaintCategory || "none"} onValueChange={v => setFormData({ ...formData, mdComplaintCategory: v === "none" ? "" : v } as any)}>
                       <SelectTrigger data-testid="select-md-complaint-category"><SelectValue placeholder="Select category" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">— Not applicable —</SelectItem>
+                        <SelectItem value="none">— Not applicable —</SelectItem>
                         <SelectItem value="product_complaint">Product Complaint</SelectItem>
                         <SelectItem value="adverse_event">Adverse Event</SelectItem>
                         <SelectItem value="device_malfunction">Device Malfunction</SelectItem>
@@ -609,10 +609,10 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project, isMedDevic
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">MDR Severity Class</Label>
-                    <Select value={(formData as any).mdSeverityClass ?? ""} onValueChange={v => setFormData({ ...formData, mdSeverityClass: v } as any)}>
+                    <Select value={(formData as any).mdSeverityClass || "none"} onValueChange={v => setFormData({ ...formData, mdSeverityClass: v === "none" ? "" : v } as any)}>
                       <SelectTrigger data-testid="select-md-severity-class"><SelectValue placeholder="Select class" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">— Pending review —</SelectItem>
+                        <SelectItem value="none">— Pending review —</SelectItem>
                         <SelectItem value="class_i_30day">Class I — 30-day report</SelectItem>
                         <SelectItem value="class_ii_5day">Class II — 5-day report</SelectItem>
                         <SelectItem value="class_iii_immediate">Class III — Immediate report</SelectItem>
@@ -1578,14 +1578,14 @@ Keep each item under 20 words. No lengthy explanation.`;
                         <div className="space-y-1.5">
                           <label className="text-xs font-medium text-muted-foreground">Complaint Category (§8.2)</label>
                           <Select
-                            value={ncAny.mdComplaintCategory || ""}
-                            onValueChange={v => onUpdate({ mdComplaintCategory: v || null } as any)}
+                            value={ncAny.mdComplaintCategory || "none"}
+                            onValueChange={v => onUpdate({ mdComplaintCategory: v === "none" ? null : v } as any)}
                           >
                             <SelectTrigger className="h-8 text-sm" data-testid="select-nc-detail-md-complaint">
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">— Not applicable —</SelectItem>
+                              <SelectItem value="none">— Not applicable —</SelectItem>
                               <SelectItem value="product_complaint">Product Complaint</SelectItem>
                               <SelectItem value="adverse_event">Adverse Event</SelectItem>
                               <SelectItem value="device_malfunction">Device Malfunction</SelectItem>
@@ -1599,14 +1599,14 @@ Keep each item under 20 words. No lengthy explanation.`;
                         <div className="space-y-1.5">
                           <label className="text-xs font-medium text-muted-foreground">MDR Severity Class</label>
                           <Select
-                            value={ncAny.mdSeverityClass || ""}
-                            onValueChange={v => onUpdate({ mdSeverityClass: v || null } as any)}
+                            value={ncAny.mdSeverityClass || "none"}
+                            onValueChange={v => onUpdate({ mdSeverityClass: v === "none" ? null : v } as any)}
                           >
                             <SelectTrigger className="h-8 text-sm" data-testid="select-nc-detail-md-severity">
                               <SelectValue placeholder="Select class" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">— Pending review —</SelectItem>
+                              <SelectItem value="none">— Pending review —</SelectItem>
                               <SelectItem value="class_i_30day">Class I — 30-day report</SelectItem>
                               <SelectItem value="class_ii_5day">Class II — 5-day report</SelectItem>
                               <SelectItem value="class_iii_immediate">Class III — Immediate report</SelectItem>
