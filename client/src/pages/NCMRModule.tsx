@@ -358,17 +358,26 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
   });
 
   const ss = (record.standardSpecific ?? {}) as any;
+  // productType gates which overlay applies per record (stored in standardSpecific.productType)
+  // Values: '' (not set) | 'automotive' | 'medical_device' | 'aerospace' | 'general'
+  const [productType, setProductType] = useState<string>(ss.productType ?? "");
+
+  // Effective overlay flags: company scope AND record product type must both match.
+  // If productType is not yet set, fall back to showing all available overlays.
+  const effAuto  = showAutomotive && (productType === "automotive"    || productType === "");
+  const effMed   = showMedDevice  && (productType === "medical_device" || productType === "");
+  const effAero  = showAerospace  && (productType === "aerospace"     || productType === "");
+  // N/A flags (company has scope, but this record's product type differs)
+  const naAuto  = showAutomotive && productType !== "" && productType !== "automotive";
+  const naMed   = showMedDevice  && productType !== "" && productType !== "medical_device";
+  const naAero  = showAerospace  && productType !== "" && productType !== "aerospace";
+  const anyOverlayVisible = effAuto || effMed || effAero || naAuto || naMed || naAero;
+
   const [auto, setAuto] = useState({
-    d0Actions: ss.automotive?.d0Actions ?? "",
     customerNotified: ss.automotive?.customerNotified ?? false,
     customerNotificationDate: ss.automotive?.customerNotificationDate ?? "",
+    customerNotificationContact: ss.automotive?.customerNotificationContact ?? "",
     customerRef: ss.automotive?.customerRef ?? "",
-    ppapImpact: ss.automotive?.ppapImpact ?? false,
-    ppapImpactNotes: ss.automotive?.ppapImpactNotes ?? "",
-    controlPlanUpdateRequired: ss.automotive?.controlPlanUpdateRequired ?? false,
-    pfmeaUpdateRequired: ss.automotive?.pfmeaUpdateRequired ?? false,
-    warrantyClaim: ss.automotive?.warrantyClaim ?? false,
-    warrantyClaimNumber: ss.automotive?.warrantyClaimNumber ?? "",
   });
   const [med, setMed] = useState({
     patientSafetyRisk: ss.medDevice?.patientSafetyRisk ?? false,
@@ -498,7 +507,7 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
               <TabsTrigger value="disposition" data-testid="tab-disposition">Disposition</TabsTrigger>
               <TabsTrigger value="rework" data-testid="tab-rework">Rework & Verify</TabsTrigger>
               <TabsTrigger value="capa" data-testid="tab-capa">CAPA</TabsTrigger>
-              {(showAutomotive || showMedDevice || showAerospace) && (
+              {anyOverlayVisible && (
                 <TabsTrigger value="overlays" data-testid="tab-overlays">Std. Overlays</TabsTrigger>
               )}
               <TabsTrigger value="closure" data-testid="tab-closure">Closure</TabsTrigger>
@@ -559,6 +568,22 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
                   </Select>
                 </F>
                 <F label="ISO Clause"><Input value={ov.isoClause} onChange={e => setOv(p => ({ ...p, isoClause: e.target.value }))} placeholder="e.g. 8.7.1" /></F>
+                {(showAutomotive || showMedDevice || showAerospace) && (
+                  <F label="Product Type (Standard Applicability)">
+                    <Select value={productType} onValueChange={v => {
+                      setProductType(v);
+                      onSave({ standardSpecific: { ...ss, productType: v === "general" ? "" : v } }, { action: "Product Type Set", notes: v });
+                    }}>
+                      <SelectTrigger data-testid="select-product-type"><SelectValue placeholder="— Select product type —" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General / Other (no standard-specific overlay)</SelectItem>
+                        {showAutomotive && <SelectItem value="automotive">Automotive Part (IATF 16949)</SelectItem>}
+                        {showMedDevice  && <SelectItem value="medical_device">Medical Device (ISO 13485)</SelectItem>}
+                        {showAerospace  && <SelectItem value="aerospace">Aerospace Part (AS9100D)</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </F>
+                )}
               </div>
               <F label="Nonconformance Description">
                 <Textarea value={ov.description} onChange={e => setOv(p => ({ ...p, description: e.target.value }))} rows={3} />
@@ -794,58 +819,57 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
             </TabsContent>
 
             {/* ── Standard Overlays ── */}
-            {(showAutomotive || showMedDevice || showAerospace) && (
+            {anyOverlayVisible && (
               <TabsContent value="overlays" className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                {/* Overlay intro note when productType not set */}
+                {productType === "" && (showAutomotive || showMedDevice || showAerospace) && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                    <span className="font-semibold shrink-0">Tip:</span>
+                    <span>Set the <strong>Product Type</strong> in the Overview tab to restrict overlays to only the applicable standard. If a company manufactures both automotive and medical device products, only the section matching this NCMR's product type should apply.</span>
+                  </div>
+                )}
+
                 {/* Automotive */}
-                {showAutomotive && (
+                {effAuto && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 pb-1 border-b border-border/60">
                       <Car className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm font-bold text-blue-700">Automotive / IATF 16949</p>
+                      <p className="text-sm font-bold text-blue-700">Automotive / IATF 16949 — Customer Notification</p>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Record customer notification for this product nonconformance event. PPAP impact, Control Plan / PFMEA updates, 8D actions, and warranty claims are managed in the <strong>NC & CAPA module</strong> under the linked corrective action.
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="sm:col-span-2">
-                        <F label="D0 — Emergency Response Actions">
-                          <Textarea value={auto.d0Actions} onChange={e => setAuto(p => ({ ...p, d0Actions: e.target.value }))} rows={2} />
-                        </F>
-                      </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 sm:col-span-2">
                         <Checkbox id="cust-notif" checked={auto.customerNotified} onCheckedChange={v => setAuto(p => ({ ...p, customerNotified: !!v }))} />
-                        <Label htmlFor="cust-notif" className="cursor-pointer">Customer Notified</Label>
+                        <Label htmlFor="cust-notif" className="cursor-pointer font-semibold">Customer / OEM Notified of Nonconforming Product</Label>
                       </div>
-                      {auto.customerNotified && (
+                      {auto.customerNotified && <>
                         <F label="Notification Date"><Input type="date" value={auto.customerNotificationDate} onChange={e => setAuto(p => ({ ...p, customerNotificationDate: e.target.value }))} /></F>
-                      )}
-                      <F label="Customer Reference #"><Input value={auto.customerRef} onChange={e => setAuto(p => ({ ...p, customerRef: e.target.value }))} /></F>
-                      <div className="flex flex-col gap-2">
-                        {[
-                          { id: "ppap", key: "ppapImpact", label: "PPAP Impact" },
-                          { id: "cp", key: "controlPlanUpdateRequired", label: "Control Plan Update Required" },
-                          { id: "pfmea", key: "pfmeaUpdateRequired", label: "PFMEA Update Required" },
-                          { id: "wc", key: "warrantyClaim", label: "Warranty Claim" },
-                        ].map(({ id, key, label }) => (
-                          <div key={id} className="flex items-center gap-2">
-                            <Checkbox id={id} checked={(auto as any)[key]} onCheckedChange={v => setAuto(p => ({ ...p, [key]: !!v }))} />
-                            <Label htmlFor={id} className="cursor-pointer text-sm">{label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                      {auto.ppapImpact && (
-                        <F label="PPAP Impact Notes"><Input value={auto.ppapImpactNotes} onChange={e => setAuto(p => ({ ...p, ppapImpactNotes: e.target.value }))} /></F>
-                      )}
-                      {auto.warrantyClaim && (
-                        <F label="Warranty Claim #"><Input value={auto.warrantyClaimNumber} onChange={e => setAuto(p => ({ ...p, warrantyClaimNumber: e.target.value }))} /></F>
-                      )}
+                        <F label="Contact Notified"><Input value={auto.customerNotificationContact} onChange={e => setAuto(p => ({ ...p, customerNotificationContact: e.target.value }))} placeholder="Name / role" /></F>
+                      </>}
+                      <F label="Customer / OEM Reference #"><Input value={auto.customerRef} onChange={e => setAuto(p => ({ ...p, customerRef: e.target.value }))} placeholder="e.g. FQ-2026-9341" /></F>
                     </div>
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, automotive: auto } }, { action: "Automotive Overlay Updated" })} disabled={isSaving}>
-                        Save Automotive
+                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, productType, automotive: auto } }, { action: "Automotive Overlay Updated" })} disabled={isSaving}>
+                        Save
                       </Button>
                     </div>
                   </div>
                 )}
+                {naAuto && (
+                  <div className="flex items-center gap-3 p-3 border border-dashed border-slate-300 rounded-lg opacity-60">
+                    <Car className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Automotive / IATF 16949</p>
+                      <p className="text-xs text-slate-400">Not applicable — this record is scoped to a {productType === "medical_device" ? "Medical Device" : "different"} product type.</p>
+                    </div>
+                    <Badge variant="outline" className="ml-auto text-xs text-slate-400 border-slate-300">N/A</Badge>
+                  </div>
+                )}
+
                 {/* Medical Device */}
-                {showMedDevice && (
+                {effMed && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 pb-1 border-b border-border/60">
                       <FlaskConical className="w-4 h-4 text-teal-600" />
@@ -883,14 +907,25 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, medDevice: med } }, { action: "ISO 13485 Overlay Updated" })} disabled={isSaving}>
+                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, productType, medDevice: med } }, { action: "ISO 13485 Overlay Updated" })} disabled={isSaving}>
                         Save ISO 13485
                       </Button>
                     </div>
                   </div>
                 )}
+                {naMed && (
+                  <div className="flex items-center gap-3 p-3 border border-dashed border-slate-300 rounded-lg opacity-60">
+                    <FlaskConical className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Medical Device / ISO 13485</p>
+                      <p className="text-xs text-slate-400">Not applicable — this record is scoped to an {productType === "automotive" ? "Automotive" : "Aerospace"} product type.</p>
+                    </div>
+                    <Badge variant="outline" className="ml-auto text-xs text-slate-400 border-slate-300">N/A</Badge>
+                  </div>
+                )}
+
                 {/* Aerospace */}
-                {showAerospace && (
+                {effAero && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 pb-1 border-b border-border/60">
                       <Plane className="w-4 h-4 text-sky-600" />
@@ -920,10 +955,20 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
                       )}
                     </div>
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, aerospace: aero } }, { action: "AS9100D Overlay Updated" })} disabled={isSaving}>
+                      <Button size="sm" onClick={() => onSave({ standardSpecific: { ...ss, productType, aerospace: aero } }, { action: "AS9100D Overlay Updated" })} disabled={isSaving}>
                         Save AS9100D
                       </Button>
                     </div>
+                  </div>
+                )}
+                {naAero && (
+                  <div className="flex items-center gap-3 p-3 border border-dashed border-slate-300 rounded-lg opacity-60">
+                    <Plane className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Aerospace / AS9100D</p>
+                      <p className="text-xs text-slate-400">Not applicable — this record is scoped to a different product type.</p>
+                    </div>
+                    <Badge variant="outline" className="ml-auto text-xs text-slate-400 border-slate-300">N/A</Badge>
                   </div>
                 )}
               </TabsContent>
