@@ -135,6 +135,14 @@ app.use((req, res, next) => {
     console.error("[training-seed] Failed (non-fatal):", error);
   }
 
+  // Seed compliance evaluation log + MD regulatory evidence demo data
+  try {
+    const { seedComplianceEvalAndMdDemoIfEmpty } = await import("./demo-seed");
+    await seedComplianceEvalAndMdDemoIfEmpty();
+  } catch (error) {
+    console.error("[compliance-seed] Failed (non-fatal):", error);
+  }
+
   // ─── Daily calibration reminder scheduler ───────────────────────────────────
   // Runs once at startup and then every 24 hours. Sends reminder emails for
   // gages due within 30 days or overdue. Does not depend on a user opening the
