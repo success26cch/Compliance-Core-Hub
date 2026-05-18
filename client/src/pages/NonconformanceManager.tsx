@@ -578,6 +578,18 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project, isMedDevic
                 <span className="ml-auto text-[10px] text-pink-500 font-medium">§8.2 / §8.3 / FDA 21 CFR 820.198</span>
               </div>
               <div className="p-4 space-y-3">
+                {/* Device identification */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Device / Product Name</Label>
+                    <Input className="h-8 text-sm" placeholder="e.g. Infusion Pump IP-400" value={(formData as any).mdDeviceName ?? ""} onChange={e => setFormData({ ...formData, mdDeviceName: e.target.value } as any)} data-testid="input-md-device-name" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Lot / Serial Number</Label>
+                    <Input className="h-8 text-sm" placeholder="e.g. LOT-2025-041 / SN-10477" value={(formData as any).mdLotSerial ?? ""} onChange={e => setFormData({ ...formData, mdLotSerial: e.target.value } as any)} data-testid="input-md-lot-serial" />
+                  </div>
+                </div>
+                {/* Complaint category + MDR class */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Complaint Category (§8.2)</Label>
@@ -1550,6 +1562,18 @@ Keep each item under 20 words. No lengthy explanation.`;
                       <span className="ml-auto text-[10px] text-pink-500 font-medium">§8.2 / §8.3 / FDA 21 CFR 820.198</span>
                     </div>
                     <div className="p-4 space-y-4">
+                      {/* Device identification */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">Device / Product Name</label>
+                          <input className="h-8 text-sm w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" placeholder="e.g. Infusion Pump IP-400" value={ncAny.mdDeviceName || ""} onChange={e => onUpdate({ mdDeviceName: e.target.value || null } as any)} data-testid="input-nc-detail-md-device" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">Lot / Serial Number</label>
+                          <input className="h-8 text-sm w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" placeholder="e.g. LOT-2025-041 / SN-10477" value={ncAny.mdLotSerial || ""} onChange={e => onUpdate({ mdLotSerial: e.target.value || null } as any)} data-testid="input-nc-detail-md-lot" />
+                        </div>
+                      </div>
+                      {/* Complaint category + MDR class */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-xs font-medium text-muted-foreground">Complaint Category (§8.2)</label>
@@ -1591,15 +1615,64 @@ Keep each item under 20 words. No lengthy explanation.`;
                           </Select>
                         </div>
                       </div>
+                      {/* MDR reporting alert + tracking */}
                       {ncAny.mdSeverityClass && ncAny.mdSeverityClass !== "not_reportable" && (
-                        <div className="flex items-start gap-2 p-3 bg-pink-50 dark:bg-pink-900/10 border border-pink-200 dark:border-pink-800/30 rounded-lg text-xs text-pink-800 dark:text-pink-300">
-                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                          <span>
-                            <strong>MDR Reporting Required:</strong>{" "}
-                            {ncAny.mdSeverityClass === "class_iii_immediate" && "Immediate report to FDA required (MDR 803.53)."}
-                            {ncAny.mdSeverityClass === "class_ii_5day" && "5-day report to FDA required (MDR 803.53)."}
-                            {ncAny.mdSeverityClass === "class_i_30day" && "30-day report to FDA required (MDR 803.50)."}
-                          </span>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 bg-pink-50 dark:bg-pink-900/10 border border-pink-200 dark:border-pink-800/30 rounded-lg text-xs text-pink-800 dark:text-pink-300">
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                            <span>
+                              <strong>MDR Reporting Required:</strong>{" "}
+                              {ncAny.mdSeverityClass === "class_iii_immediate" && "Immediate report to FDA required (MDR 803.53). File within 5 business days of awareness."}
+                              {ncAny.mdSeverityClass === "class_ii_5day" && "5-day report to FDA required (MDR 803.53). File within 5 business days of awareness."}
+                              {ncAny.mdSeverityClass === "class_i_30day" && "30-day report to FDA required (MDR 803.50). File within 30 calendar days of awareness."}
+                            </span>
+                          </div>
+                          {/* MDR Filing Tracker */}
+                          <div className="rounded-lg border border-pink-100 dark:border-pink-900/40 bg-white dark:bg-card p-3 space-y-3">
+                            <p className="text-[11px] font-bold text-pink-600 uppercase tracking-wide">MDR Filing Tracker</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-muted-foreground">Reporting Deadline</label>
+                                <input type="date" className="h-8 text-sm w-full rounded-md border border-input bg-background px-3 py-1 shadow-sm" value={ncAny.reportingDeadline || ""} onChange={e => onUpdate({ reportingDeadline: e.target.value || null } as any)} data-testid="input-nc-reporting-deadline" />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-muted-foreground">Days Remaining</label>
+                                <div className={`h-8 flex items-center px-3 rounded-md text-sm font-bold border ${
+                                  !ncAny.reportingDeadline ? "text-muted-foreground border-border bg-muted/30" :
+                                  (() => { const d = Math.ceil((new Date(ncAny.reportingDeadline).getTime() - Date.now()) / 86400000); return d < 0 ? "text-red-700 border-red-200 bg-red-50" : d <= 5 ? "text-amber-700 border-amber-200 bg-amber-50" : "text-emerald-700 border-emerald-200 bg-emerald-50"; })()
+                                }`}>
+                                  {ncAny.reportingDeadline ? (() => { const d = Math.ceil((new Date(ncAny.reportingDeadline).getTime() - Date.now()) / 86400000); return d < 0 ? `${Math.abs(d)}d OVERDUE` : d === 0 ? "Due TODAY" : `${d} days`; })() : "—"}
+                                </div>
+                              </div>
+                              <div className="col-span-2 flex items-center gap-3">
+                                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer">
+                                  <input type="checkbox" checked={!!ncAny.reportSubmitted} onChange={e => onUpdate({ reportSubmitted: e.target.checked } as any)} className="rounded" data-testid="checkbox-nc-mdr-filed" />
+                                  MDR Filed with FDA
+                                </label>
+                              </div>
+                              {ncAny.reportSubmitted && (
+                                <>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">Date Filed</label>
+                                    <input type="date" className="h-8 text-sm w-full rounded-md border border-input bg-background px-3 py-1 shadow-sm" value={ncAny.reportSubmissionDate || ""} onChange={e => onUpdate({ reportSubmissionDate: e.target.value || null } as any)} data-testid="input-nc-mdr-date-filed" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">FDA Reference Number</label>
+                                    <input className="h-8 text-sm w-full rounded-md border border-input bg-background px-3 py-1 shadow-sm" placeholder="e.g. ACK-2024-78923" value={ncAny.reportReferenceNumber || ""} onChange={e => onUpdate({ reportReferenceNumber: e.target.value || null } as any)} data-testid="input-nc-mdr-reference" />
+                                  </div>
+                                </>
+                              )}
+                              <div className="col-span-2 flex items-center gap-3">
+                                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer">
+                                  <input type="checkbox" checked={!!ncAny.escalationTriggered} onChange={e => onUpdate({ escalationTriggered: e.target.checked } as any)} className="rounded" data-testid="checkbox-nc-customer-notified" />
+                                  Customer / Healthcare Facility Notified
+                                </label>
+                                {ncAny.escalationTriggered && (
+                                  <input type="date" className="h-7 text-xs rounded-md border border-input bg-background px-2 py-1 shadow-sm ml-auto" value={ncAny.escalationDate || ""} onChange={e => onUpdate({ escalationDate: e.target.value || null } as any)} data-testid="input-nc-notified-date" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

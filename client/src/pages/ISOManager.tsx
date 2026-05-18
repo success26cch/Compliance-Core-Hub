@@ -1106,7 +1106,7 @@ export default function ISOManager() {
             ) : activeSection === 'internal_audit' ? (
               <div className="flex-1 min-h-0 overflow-hidden">
                 {canAccessSection('internal_audit', isoRole, isSuperadmin)
-                  ? <InternalAuditModule onAskIsa={handleAskIsa} />
+                  ? <InternalAuditModule onAskIsa={handleAskIsa} isMedDevice={isMedDevice} />
                   : <div className="overflow-y-auto p-4 sm:p-6 h-full"><LockedModuleView section="internal_audit" /></div>}
               </div>
             ) : activeSection === 'lpa' ? (

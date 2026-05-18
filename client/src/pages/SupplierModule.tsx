@@ -766,7 +766,8 @@ function SortHeader({ label, field, sortBy, sortDir, onSort }: {
 }
 
 function ApprovedSupplierList({ isoProjectId, project }: { isoProjectId?: number; project?: IsoProject | null }) {
-  const selectedStandards = project?.selectedStandards;
+  const selectedStandards = (project as any)?.selectedStandards
+    ?? (project?.standard ? project.standard.split(", ").filter(Boolean) : null);
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);

@@ -393,7 +393,7 @@ const PROCESS_CHECKLIST_RESULT_OPTS: { value: MfgProcessAuditChecklistItem["resu
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
+export function InternalAuditModule({ onAskIsa, isMedDevice = false }: { onAskIsa?: (prompt: string) => void; isMedDevice?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -954,6 +954,37 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* ── ISO 13485 §9.2 Required Audit Scope Reminder ── */}
+        {isMedDevice && activeTab === "audits" && (
+          <div className="mx-6 mt-5 rounded-xl border border-pink-200 dark:border-pink-800/50 overflow-hidden">
+            <div className="bg-pink-50 dark:bg-pink-950/30 border-b border-pink-200 dark:border-pink-800/40 px-4 py-2.5 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-pink-600 shrink-0" />
+              <span className="text-sm font-bold text-pink-700 dark:text-pink-400">ISO 13485 §9.2 — Required Internal Audit Scope Areas</span>
+              <span className="ml-auto text-[10px] text-pink-500 font-medium hidden sm:block">FDA 21 CFR 820.22</span>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-2">
+              {[
+                { clause: "§8.2 / 820.198", label: "Complaint Handling System", desc: "Verify complaint intake, investigation timeliness (30-day), MDR reportability determinations" },
+                { clause: "§8.2.4 / 820.184", label: "Device History Record (DHR) Completeness", desc: "Confirm DHR exists for each device type per lot/batch; all required records present" },
+                { clause: "§8.5 / 820.100", label: "CAPA System Effectiveness", desc: "Evaluate root cause analysis quality, effectiveness verification, and timely closure" },
+                { clause: "§7.5.9 / 820.86", label: "Acceptance Activities & Release", desc: "Inspect records for product acceptance criteria, inspection stamps, and release authorization" },
+                { clause: "§7.5.11 / 820.140", label: "Sterilization & Sterility Assurance", desc: "Review sterilization validation records, parametric release, and revalidation triggers" },
+                { clause: "§7.4 / 820.50", label: "Purchasing Controls — Critical Suppliers", desc: "Confirm critical/non-critical designation, quality agreements on file, and supplier monitoring" },
+                { clause: "§7.1 / ISO 14971", label: "Risk Management File (ISO 14971)", desc: "Verify risk management plan, FMEA linkage, residual risk acceptance, and post-market updates" },
+                { clause: "§8.2.6 / EU MDR Art.87", label: "MDR / Vigilance Reporting System", desc: "Audit MDR filing procedure, 5-day/30-day decision tree, supplemental report tracking" },
+              ].map(item => (
+                <div key={item.clause} className="flex items-start gap-2 p-2.5 rounded-lg bg-white dark:bg-card border border-pink-100 dark:border-pink-900/30">
+                  <div className="w-2 h-2 rounded-full bg-pink-400 mt-1.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-pink-700 dark:text-pink-400">{item.label}</p>
+                    <p className="text-[10px] text-pink-500 font-medium mb-0.5">{item.clause}</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {activeTab === "audits" ? (
           isLoading ? (
             <div className="text-center text-muted-foreground py-12">Loading audits...</div>

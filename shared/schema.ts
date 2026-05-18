@@ -498,6 +498,8 @@ export const nonconformances = pgTable("nonconformances", {
   // ── ISO 13485 / Medical Device Regulatory Fields ──────────────────────────
   mdComplaintCategory: text("md_complaint_category"),       // product_complaint | adverse_event | device_malfunction | use_error | labeling_issue | sterility | other
   mdSeverityClass: text("md_severity_class"),               // class_i_30day | class_ii_5day | class_iii_immediate | not_reportable
+  mdDeviceName: text("md_device_name"),                     // Device / product name involved
+  mdLotSerial: text("md_lot_serial"),                       // Lot number and/or serial number
   requiresRegulatoryReport: boolean("requires_regulatory_report").default(false),
   reportingDeadline: text("reporting_deadline"),            // ISO date string
   reportSubmitted: boolean("report_submitted").default(false),
