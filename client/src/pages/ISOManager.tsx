@@ -3352,6 +3352,91 @@ function OrgNameEdit({ project }: { project: IsoProject }) {
   );
 }
 
+function StandardsEdit({ project }: { project: IsoProject }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [selected, setSelected] = useState<string[]>(
+    (project.standard || "").split(", ").filter(Boolean)
+  );
+  const [saving, setSaving] = useState(false);
+
+  const toggle = (s: string) =>
+    setSelected(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+  const save = async () => {
+    if (selected.length === 0) return;
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", { standard: selected.join(", ") });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setEditing(false);
+      toast({ title: "Standards updated", description: `Scope set to: ${selected.join(", ")}` });
+    } catch { toast({ title: "Error", description: "Could not save standards.", variant: "destructive" }); }
+    finally { setSaving(false); }
+  };
+
+  const cancel = () => {
+    setSelected((project.standard || "").split(", ").filter(Boolean));
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex-1 space-y-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {WIZARD_STANDARDS.map(s => {
+            const on = selected.includes(s);
+            return (
+              <button key={s} onClick={() => toggle(s)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-left text-xs font-bold transition-all ${on ? "border-accent bg-accent/8 text-accent" : "border-border/50 text-muted-foreground hover:border-accent/40 hover:text-primary"}`}
+                data-testid={`button-std-${s.replace(/[\s/]/g, "-").toLowerCase()}`}>
+                <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 ${on ? "border-accent bg-accent" : "border-muted-foreground/50"}`}>
+                  {on && <Check className="w-2 h-2 text-white" />}
+                </div>
+                {s}
+              </button>
+            );
+          })}
+        </div>
+        {selected.length > 1 && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 text-[11px] text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span><strong>Billing note:</strong> Each additional standard extends your system scope. Multi-standard plans may be subject to adjusted pricing — contact ACSI to confirm your subscription covers all selected standards.</span>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={save} disabled={saving || selected.length === 0}
+            className="h-8 px-3 gap-1.5 bg-accent hover:bg-accent/90 text-white text-xs" data-testid="button-save-standards">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            Save Standards
+          </Button>
+          <Button size="sm" variant="ghost" onClick={cancel} disabled={saving} className="h-8 px-2 text-muted-foreground" data-testid="button-cancel-standards">
+            <X className="w-3.5 h-3.5" />
+          </Button>
+          <span className="text-[11px] text-muted-foreground ml-1">{selected.length} selected</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2 flex-1 group">
+      <div className="flex flex-wrap gap-1.5">
+        {(project.standard || "").split(", ").filter(Boolean).map(s => (
+          <span key={s} className="text-xs bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{s}</span>
+        ))}
+        {!project.standard && <span className="text-sm text-muted-foreground italic">Not set</span>}
+      </div>
+      <Button size="sm" variant="ghost" onClick={() => setEditing(true)}
+        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-accent shrink-0"
+        data-testid="button-edit-standards">
+        <Pencil className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+}
+
 function SystemProfileModule({ project, onStartWizard }: { project: IsoProject | null; onStartWizard: () => void }) {
   if (!project || project.status === "not_started") {
     return (
@@ -3428,16 +3513,10 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
                   <span className="text-sm font-semibold text-primary">{project.orgAddress}</span>
                 </div>
               )}
-              {project.standard && (
-                <div className="flex items-start gap-4 px-5 py-3">
-                  <span className="text-xs text-muted-foreground w-36 shrink-0 pt-0.5">Management Standard(s)</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {project.standard.split(", ").filter(Boolean).map(s => (
-                      <span key={s} className="text-xs bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex items-start gap-4 px-5 py-3">
+                <span className="text-xs text-muted-foreground w-36 shrink-0 pt-1">Management Standard(s)</span>
+                <StandardsEdit project={project} />
+              </div>
               {project.totalEmployees && (
                 <div className="flex items-center gap-4 px-5 py-3">
                   <span className="text-xs text-muted-foreground w-36 shrink-0">Employees</span>
