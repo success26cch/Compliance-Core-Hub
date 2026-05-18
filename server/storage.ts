@@ -77,6 +77,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
   mdRegulatoryEvidence,
   type MdRegulatoryEvidence, type InsertMdRegulatoryEvidence,
+  ncmrRecords,
+  type NcmrRecord, type InsertNcmrRecord,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, asc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -580,6 +582,12 @@ export interface IStorage {
   createMdRegulatoryEvidence(data: InsertMdRegulatoryEvidence): Promise<MdRegulatoryEvidence>;
   updateMdRegulatoryEvidence(id: number, userId: string, data: Partial<InsertMdRegulatoryEvidence>): Promise<MdRegulatoryEvidence | null>;
   deleteMdRegulatoryEvidence(id: number, userId: string): Promise<void>;
+
+  // NCMR — Nonconforming Product & Material Control
+  getNcmrRecords(userId: string, isSuperadmin?: boolean): Promise<NcmrRecord[]>;
+  createNcmrRecord(data: InsertNcmrRecord): Promise<NcmrRecord>;
+  updateNcmrRecord(id: number, userId: string, data: Partial<InsertNcmrRecord>, isSuperadmin?: boolean): Promise<NcmrRecord | undefined>;
+  deleteNcmrRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<boolean>;
 
   // APQP Documentation Suite
   getApqpProcessSteps(apqpProjectId: number, userId: string): Promise<ApqpProcessStep[]>;
@@ -3245,6 +3253,29 @@ export class DatabaseStorage implements IStorage {
   async deleteMdRegulatoryEvidence(id: number, userId: string): Promise<void> {
     await db.delete(mdRegulatoryEvidence)
       .where(and(eq(mdRegulatoryEvidence.id, id), eq(mdRegulatoryEvidence.userId, userId)));
+  }
+
+  // ── NCMR ──────────────────────────────────────────────────────────────────
+  async getNcmrRecords(userId: string, isSuperadmin = false): Promise<NcmrRecord[]> {
+    return db.select().from(ncmrRecords)
+      .where(isSuperadmin ? undefined : eq(ncmrRecords.userId, userId))
+      .orderBy(desc(ncmrRecords.createdAt));
+  }
+  async createNcmrRecord(data: InsertNcmrRecord): Promise<NcmrRecord> {
+    const [row] = await db.insert(ncmrRecords).values(data).returning();
+    return row;
+  }
+  async updateNcmrRecord(id: number, userId: string, data: Partial<InsertNcmrRecord>, isSuperadmin = false): Promise<NcmrRecord | undefined> {
+    const [row] = await db.update(ncmrRecords)
+      .set({ ...data, updatedAt: new Date() })
+      .where(isSuperadmin ? eq(ncmrRecords.id, id) : and(eq(ncmrRecords.id, id), eq(ncmrRecords.userId, userId)))
+      .returning();
+    return row;
+  }
+  async deleteNcmrRecord(id: number, userId: string, isSuperadmin = false): Promise<boolean> {
+    await db.delete(ncmrRecords)
+      .where(isSuperadmin ? eq(ncmrRecords.id, id) : and(eq(ncmrRecords.id, id), eq(ncmrRecords.userId, userId)));
+    return true;
   }
 }
 

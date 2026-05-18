@@ -3273,3 +3273,156 @@ export const mdRegulatoryEvidence = pgTable("md_regulatory_evidence", {
 export const insertMdRegulatoryEvidenceSchema = createInsertSchema(mdRegulatoryEvidence).omit({ id: true, createdAt: true, updatedAt: true });
 export type MdRegulatoryEvidence = typeof mdRegulatoryEvidence.$inferSelect;
 export type InsertMdRegulatoryEvidence = z.infer<typeof insertMdRegulatoryEvidenceSchema>;
+
+// ─── Nonconforming Product & Material Control (NCMR) ──────────────────────────
+// Enterprise MRB / quarantine / disposition / rework module.
+// Supports automotive (IATF 16949), medical device (ISO 13485), aerospace
+// (AS9100D), and ISO 9001/14001/45001 based management systems.
+export const ncmrRecords = pgTable("ncmr_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  ncmrNumber: text("ncmr_number"),           // auto: NCMR-2026-0001
+
+  // ── Material / Product Identification ───
+  title: text("title").notNull(),
+  description: text("description"),
+  partNumber: text("part_number"),
+  partName: text("part_name"),
+  lotNumber: text("lot_number"),
+  serialNumber: text("serial_number"),
+  quantity: text("quantity"),
+  unit: text("unit"),
+  drawingRevision: text("drawing_revision"),
+
+  // ── Source & Detection ───────────────────
+  sourceType: text("source_type").notNull().default("incoming_inspection"),
+  // incoming_inspection | production | customer_return | internal_audit | field_return | supplier_ship_back | receiving
+  supplierId: integer("supplier_id"),
+  supplierName: text("supplier_name"),
+  customerName: text("customer_name"),
+  identifiedBy: text("identified_by"),
+  identifiedDate: text("identified_date"),
+  department: text("department"),
+  workOrder: text("work_order"),
+  purchaseOrder: text("purchase_order"),
+
+  // ── Classification ───────────────────────
+  severity: text("severity").notNull().default("minor"),   // critical | major | minor
+  ncType: text("nc_type"),   // dimensional | functional | visual | documentation | labeling | contamination | material | other
+  isoClause: text("iso_clause"),
+  linkedNcId: integer("linked_nc_id"),
+
+  // ── Immediate Containment ────────────────
+  immediateContainment: text("immediate_containment"),
+
+  // ── Status / Workflow ────────────────────
+  // open | quarantine | under_review | disposition_pending | rework_in_progress | verification_pending | closed | released
+  status: text("status").notNull().default("open"),
+
+  // ── Quarantine ───────────────────────────
+  quarantineRequired: boolean("quarantine_required"),
+  quarantineLocation: text("quarantine_location"),
+  quarantineTagNumber: text("quarantine_tag_number"),
+  quarantineDate: text("quarantine_date"),
+  quarantineBy: text("quarantine_by"),
+  quarantineNotes: text("quarantine_notes"),
+
+  // ── Disposition (MRB Decision) ───────────
+  // scrap | rework | use_as_is | return_to_supplier | concession
+  dispositionDecision: text("disposition_decision"),
+  dispositionNotes: text("disposition_notes"),
+  dispositionApprovedBy: text("disposition_approved_by"),
+  dispositionApprovalDate: text("disposition_approval_date"),
+  dispositionReviewedBy: text("disposition_reviewed_by"),
+  concessionRequestNumber: text("concession_request_number"),
+  concessionExpiryDate: text("concession_expiry_date"),
+  returnToSupplierDate: text("return_to_supplier_date"),
+  returnTrackingNumber: text("return_tracking_number"),
+  scrapMethod: text("scrap_method"),
+  scrapDate: text("scrap_date"),
+  scrapWitnessedBy: text("scrap_witnessed_by"),
+
+  // ── Rework ───────────────────────────────
+  reworkInstructions: text("rework_instructions"),
+  reworkAssignedTo: text("rework_assigned_to"),
+  reworkDueDate: text("rework_due_date"),
+  reworkStartDate: text("rework_start_date"),
+  reworkCompletedDate: text("rework_completed_date"),
+  reworkCost: text("rework_cost"),
+
+  // ── Verification ─────────────────────────
+  verificationRequired: boolean("verification_required"),
+  verificationActivity: text("verification_activity"),
+  verificationBy: text("verification_by"),
+  verificationDate: text("verification_date"),
+  verificationResult: text("verification_result"),   // pass | fail | conditional_pass
+  verificationNotes: text("verification_notes"),
+  reinspectionRequired: boolean("reinspection_required"),
+
+  // ── CAPA Linkage ─────────────────────────
+  capaRequired: boolean("capa_required"),
+  capaLinkedNcNumber: text("capa_linked_nc_number"),
+  capaDecisionBy: text("capa_decision_by"),
+  capaDecisionDate: text("capa_decision_date"),
+  capaDecisionNotes: text("capa_decision_notes"),
+
+  // ── Closure ──────────────────────────────
+  closedBy: text("closed_by"),
+  closedDate: text("closed_date"),
+  closureNotes: text("closure_notes"),
+
+  // ── Standard-specific overlays (JSONB) ───
+  standardSpecific: jsonb("standard_specific").$type<{
+    automotive?: {
+      d0Actions?: string;
+      customerNotified?: boolean;
+      customerNotificationDate?: string;
+      customerRef?: string;
+      ppapImpact?: boolean;
+      ppapImpactNotes?: string;
+      controlPlanUpdateRequired?: boolean;
+      pfmeaUpdateRequired?: boolean;
+      warrantyClaim?: boolean;
+      warrantyClaimNumber?: string;
+    };
+    medDevice?: {
+      patientSafetyRisk?: boolean;
+      patientSafetyNotes?: string;
+      complaintLinked?: boolean;
+      complaintNumber?: string;
+      mdrRequired?: boolean;
+      mdrFiled?: boolean;
+      mdrDate?: string;
+      deviceRecall?: boolean;
+      regulatoryBodyNotified?: boolean;
+    };
+    aerospace?: {
+      customerNotified?: boolean;
+      customerNotificationDate?: string;
+      escapeSuspect?: boolean;
+      counterfeitPartSuspect?: boolean;
+      primeContractorNotified?: boolean;
+      governmentPropertyAffected?: boolean;
+      certificationAffected?: boolean;
+      productAuditRequired?: boolean;
+    };
+  }>(),
+
+  // ── Audit trail ──────────────────────────
+  auditTrail: jsonb("audit_trail").$type<{
+    timestamp: string;
+    action: string;
+    by: string;
+    notes?: string;
+    field?: string;
+    fromValue?: string;
+    toValue?: string;
+  }[]>(),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertNcmrRecordSchema = createInsertSchema(ncmrRecords).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertNcmrRecord = z.infer<typeof insertNcmrRecordSchema>;
+export type NcmrRecord = typeof ncmrRecords.$inferSelect;
