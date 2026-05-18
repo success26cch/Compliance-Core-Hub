@@ -27,12 +27,13 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
-  ScanSearch, Leaf, HardHat, Files, Check,
+  ScanSearch, Leaf, HardHat, Files, Check, Package,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
 import type { IsoProject } from "@shared/schema";
 import { NonconformanceManager } from "./NonconformanceManager";
+import NCMRModule from "./NCMRModule";
 import { DocumentationModule } from "./DocumentationModule";
 import { InternalAuditModule } from "./InternalAuditModule";
 import LayeredProcessAuditModule from "./LayeredProcessAuditModule";
@@ -278,11 +279,12 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'ppap' | 'core_docs' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
+type SectionKey = 'context_org' | 'nc' | 'ncmr' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'ppap' | 'core_docs' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
   nc:                [null, undefined, 'librarian', 'trainer', 'auditor'],
+  ncmr:              [null, undefined, 'librarian', 'trainer', 'auditor'],
   documentation:     [null, undefined, 'librarian', 'trainer', 'auditor'],
   process_map:       [null, undefined, 'librarian', 'trainer', 'auditor'],
   system_profile:    [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -766,11 +768,12 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["context_org","process_map","nc","documentation","roles_raci","communication","risk","management_review","action_items","internal_audit","lpa","training","measurement"] as SectionKey[]).map((section) => {
+              {(["context_org","process_map","nc","ncmr","documentation","roles_raci","communication","risk","management_review","action_items","internal_audit","lpa","training","measurement"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   context_org:        { icon: Compass,       label: "Context of the Org" },
                   process_map:        { icon: MapPin,        label: "Process Maps" },
                   nc:                 { icon: Shield,        label: "NC & CAPA" },
+                  ncmr:               { icon: Package,       label: "NC Product Control" },
                   documentation:      { icon: FileText,      label: "Documentation" },
                   roles_raci:         { icon: Users,         label: "Roles & RACI" },
                   communication:      { icon: Mail,          label: "Communication" },
@@ -1074,6 +1077,15 @@ export default function ISOManager() {
             ) : activeSection === 'nc' ? (
               <div className="flex-1 overflow-y-auto min-h-0">
                 <NonconformanceManager onAskIsa={handleAskIsa} isMedDevice={isMedDevice} />
+              </div>
+            ) : activeSection === 'ncmr' ? (
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <NCMRModule
+                  project={project}
+                  isoProjectId={project?.id}
+                  isMedDevice={isMedDevice}
+                  onAskIsa={handleAskIsa}
+                />
               </div>
             ) : activeSection === 'process_map' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">

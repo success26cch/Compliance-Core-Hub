@@ -6157,6 +6157,70 @@ Description: ${nc.description}${(nc as any).rootCause ? `\nPartial root cause on
     }
   });
 
+  // ─── NCMR — NONCONFORMING PRODUCT & MATERIAL CONTROL ───────────────────────
+  app.get("/api/ncmr-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const records = await storage.getNcmrRecords(userId, isSuperadmin);
+      res.json(records);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/ncmr-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const record = await storage.createNcmrRecord({ ...req.body, userId });
+      const year = new Date().getFullYear();
+      const seq = String(record.id).padStart(4, "0");
+      const ncmrNumber = `NCMR-${year}-${seq}`;
+      const auditTrail = [{
+        timestamp: new Date().toISOString(),
+        action: "Record Created",
+        by: req.body.identifiedBy || "System",
+        notes: "NCMR record opened",
+      }];
+      const updated = await storage.updateNcmrRecord(record.id, userId, { ncmrNumber, auditTrail }, isSuperadmin);
+      res.status(201).json(updated ?? record);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/ncmr-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const updated = await storage.updateNcmrRecord(id, userId, req.body, isSuperadmin);
+      if (!updated) return res.status(404).json({ message: "Record not found" });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/ncmr-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteNcmrRecord(id, userId, isSuperadmin);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // ─── ISO DOCUMENTS ──────────────────────────────────────────────────────────
   app.get("/api/iso-documents", async (req: Request, res: Response) => {
     try {
