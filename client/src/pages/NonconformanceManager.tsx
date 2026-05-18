@@ -167,7 +167,8 @@ export function NonconformanceManager({ onAskIsa, isMedDevice = false }: Nonconf
 
   const getSourceBadge = (source: string) => {
     if (source === 'customer_complaint') return <Badge variant="destructive">Customer Complaint</Badge>;
-    return <Badge variant="outline" className="capitalize">{source.replace('_', ' ')}</Badge>;
+    if (source === 'nonconforming_product') return <Badge className="bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/30 dark:text-amber-300">NC Product (NCMR 8.7)</Badge>;
+    return <Badge variant="outline" className="capitalize">{source.replace(/_/g, ' ')}</Badge>;
   };
 
   return (
@@ -478,6 +479,7 @@ function LogNCDialog({ isOpen, onClose, onSubmit, isPending, project, isMedDevic
                   <SelectItem value="supplier_issue">Supplier Issue</SelectItem>
                   <SelectItem value="process_observation">Process Observation</SelectItem>
                   <SelectItem value="management_review">Management Review</SelectItem>
+                  <SelectItem value="nonconforming_product">Nonconforming Product (NCMR 8.7)</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>

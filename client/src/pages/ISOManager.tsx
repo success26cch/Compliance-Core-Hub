@@ -1085,6 +1085,7 @@ export default function ISOManager() {
                   isoProjectId={project?.id}
                   isMedDevice={isMedDevice}
                   onAskIsa={handleAskIsa}
+                  onNavigateToNC={() => setActiveSection('nc')}
                 />
               </div>
             ) : activeSection === 'process_map' ? (

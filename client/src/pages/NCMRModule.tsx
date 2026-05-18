@@ -275,10 +275,11 @@ function LogNCMRDialog({ open, onClose, onSave, isSaving }: {
 }
 
 // ── Detail dialog ─────────────────────────────────────────────────────────────
-function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, showMedDevice, showAerospace }: {
+function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, showMedDevice, showAerospace, onNavigateToNC }: {
   record: NcmrRecord; onClose: () => void;
   onSave: (data: any, trail?: { action: string; by?: string; notes?: string }) => void;
   isSaving: boolean; showAutomotive: boolean; showMedDevice: boolean; showAerospace: boolean;
+  onNavigateToNC?: () => void;
 }) {
   const [tab, setTab] = useState("overview");
 
@@ -747,6 +748,28 @@ function NCMRDetailDialog({ record, onClose, onSave, isSaving, showAutomotive, s
 
             {/* ── CAPA ── */}
             <TabsContent value="capa" className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Cross-module link banner */}
+              <div className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <ClipboardList className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800">NCMR → CAPA Workflow</p>
+                  <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    The <strong>NC & CAPA module</strong> (ISO §10.2) manages corrective action plans. When product
+                    nonconformance requires root-cause investigation, create a CAPA there with source
+                    <em> "Nonconforming Product (NCMR 8.7)"</em> and reference this NCMR number.
+                  </p>
+                  {onNavigateToNC && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="mt-2 h-7 text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
+                      onClick={() => { onNavigateToNC(); }}
+                      data-testid="button-go-to-nc-capa"
+                    >
+                      Open NC & CAPA Module <ChevronRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <Checkbox id="capa-req" checked={ca.capaRequired} onCheckedChange={v => setCa(p => ({ ...p, capaRequired: !!v }))} />
                 <Label htmlFor="capa-req" className="cursor-pointer font-semibold text-blue-800">CAPA Required — root cause investigation needed</Label>
@@ -962,9 +985,10 @@ interface NCMRModuleProps {
   isAutomotive?: boolean;
   isAerospace?: boolean;
   onAskIsa?: (q: string) => void;
+  onNavigateToNC?: () => void;
 }
 
-export default function NCMRModule({ project, isMedDevice, isAutomotive, isAerospace, onAskIsa }: NCMRModuleProps) {
+export default function NCMRModule({ project, isMedDevice, isAutomotive, isAerospace, onAskIsa, onNavigateToNC }: NCMRModuleProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -1196,6 +1220,7 @@ export default function NCMRModule({ project, isMedDevice, isAutomotive, isAeros
           showAutomotive={showAutomotive}
           showMedDevice={showMedDevice}
           showAerospace={showAerospace}
+          onNavigateToNC={onNavigateToNC}
         />
       )}
     </div>

@@ -244,6 +244,8 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
       }
       // Backfill hazard_analysis if missing for the CCI Chemical demo account
       await seedHazardsIfMissing();
+      // Backfill NCMR demo records if missing
+      await seedNcmrIfMissing();
       return;
     }
 
@@ -623,5 +625,188 @@ export async function seedComplianceEvalAndMdDemoIfEmpty(): Promise<void> {
   } else {
     const cnt = Number((mdCount.rows[0] as any).cnt ?? 0);
     console.log(`[demo-seed] md_regulatory_evidence already has ${cnt} row(s) — skipping.`);
+  }
+}
+
+// ─── NCMR Demo Data ────────────────────────────────────────────────────────────
+async function seedNcmrIfMissing(): Promise<void> {
+  try {
+    const res = await db.execute(sql`
+      SELECT id, user_id FROM iso_projects WHERE user_id = ${EBENI_USER_ID} LIMIT 1
+    `);
+    if (!res.rows.length) return;
+    const isoProjectId = Number((res.rows[0] as any).id);
+    const userId = String((res.rows[0] as any).user_id);
+
+    const countRes = await db.execute(sql`SELECT COUNT(*) as cnt FROM ncmr_records WHERE user_id = ${userId}`);
+    const cnt = Number((countRes.rows[0] as any).cnt ?? 0);
+    if (cnt > 0) {
+      console.log(`[demo-seed] ncmr_records already has ${cnt} row(s) — skipping.`);
+      return;
+    }
+
+    const d = (daysAgo: number) =>
+      new Date(Date.now() - daysAgo * 86400000).toISOString().split("T")[0];
+    const df = (daysForward: number) =>
+      new Date(Date.now() + daysForward * 86400000).toISOString().split("T")[0];
+
+    // ── NCMR-2026-0001: Critical batch failure — disposition pending ─────────
+    const trail1 = JSON.stringify([
+      { timestamp: new Date(Date.now() - 10 * 86400000).toISOString(), action: "Record Created", by: "Elena Vasquez", notes: "Batch failed pH spec at final QC" },
+      { timestamp: new Date(Date.now() - 10 * 86400000).toISOString(), action: "Material Quarantined", by: "Marcus Webb", notes: "2400 L placed in Red Tag Cage C2" },
+      { timestamp: new Date(Date.now() - 8 * 86400000).toISOString(), action: "Sent to MRB Review", by: "Elena Vasquez", notes: "MRB panel scheduled" },
+      { timestamp: new Date(Date.now() - 6 * 86400000).toISOString(), action: "Awaiting Disposition Decision", by: "Elena Vasquez" },
+    ]);
+    await db.execute(sql`
+      INSERT INTO ncmr_records (
+        user_id, iso_project_id, ncmr_number, title, description,
+        part_number, part_name, lot_number, quantity, unit,
+        source_type, identified_by, identified_date, department,
+        severity, nc_type, iso_clause, immediate_containment, status,
+        quarantine_required, quarantine_location, quarantine_tag_number,
+        quarantine_date, quarantine_by, quarantine_notes,
+        capa_required, audit_trail, created_at, updated_at
+      ) VALUES (
+        ${userId}, ${isoProjectId}, 'NCMR-2026-0001',
+        'DOT 3 Brake Fluid pH Out-of-Spec — Batch BF-2026-0041',
+        'Batch BF-2026-0041 DOT 3 brake fluid failed final QC pH criterion (spec: 7.0–11.5 per FMVSS 116). Measured pH: 6.4 on three independent readings. Suspected root cause: corrosion inhibitor dilution error in glycol base stock blend.',
+        'BF-DOT3-001', 'DOT 3 Brake Fluid', 'BF-2026-0041', '2400', 'liters',
+        'production', 'Marcus Webb', ${d(10)}, 'QC Laboratory',
+        'critical', 'functional', '8.7.1',
+        'Batch quarantined immediately. No product shipped. All 18 containers marked HOLD — DO NOT SHIP. Three incoming raw material lots flagged for traceability review.',
+        'disposition_pending',
+        true, 'Red Tag Area — Cage C2', 'TAG-2026-0041',
+        ${d(10)}, 'Marcus Webb', 'Physical cage lock applied. Quarantine log posted on cage door.',
+        true, ${trail1}::jsonb, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'
+      )
+    `);
+
+    // ── NCMR-2026-0002: Supplier COA discrepancy — under review ─────────────
+    const trail2 = JSON.stringify([
+      { timestamp: new Date(Date.now() - 5 * 86400000).toISOString(), action: "Record Created", by: "QC Lab Technician", notes: "COA vs GC test discrepancy at receiving" },
+      { timestamp: new Date(Date.now() - 5 * 86400000).toISOString(), action: "Material Quarantined", by: "Receiving Lead", notes: "Pallet isolated in incoming hold area" },
+      { timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), action: "Sent to MRB Review", by: "Elena Vasquez", notes: "Supplier QA contacted with test data" },
+    ]);
+    await db.execute(sql`
+      INSERT INTO ncmr_records (
+        user_id, iso_project_id, ncmr_number, title, description,
+        part_number, part_name, lot_number, quantity, unit,
+        source_type, supplier_name, identified_by, identified_date, department, purchase_order,
+        severity, nc_type, iso_clause, immediate_containment, status,
+        quarantine_required, quarantine_location, quarantine_tag_number,
+        quarantine_date, quarantine_by,
+        capa_required, audit_trail, created_at, updated_at
+      ) VALUES (
+        ${userId}, ${isoProjectId}, 'NCMR-2026-0002',
+        'Glycol Ether COA Purity Discrepancy — Lot GE-2026-0118',
+        'Incoming shipment of diethylene glycol monobutyl ether. Supplier COA: purity 99.5%. Internal GC analysis: 97.1%. Discrepancy of 2.4% exceeds 1.0% specification tolerance. Potential impact on final product boiling point and pH compliance.',
+        'GE-DGBE-100', 'Diethylene Glycol Monobutyl Ether', 'GE-2026-0118', '1000', 'kg',
+        'incoming_inspection', 'Chemtrade Solutions LLC', 'QC Lab Technician', ${d(5)}, 'Receiving / QC Lab', 'PO-2026-0388',
+        'major', 'material', '8.4.3',
+        'Pallet quarantined at dock. Supplier QA notified via email with GC data. Replacement shipment requested. No production use.',
+        'under_review',
+        true, 'Incoming Hold — Dock Door 3', 'TAG-2026-0042',
+        ${d(5)}, 'Receiving Lead',
+        false, ${trail2}::jsonb, NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'
+      )
+    `);
+
+    // ── NCMR-2026-0003: Customer return — rework in progress ────────────────
+    const trail3 = JSON.stringify([
+      { timestamp: new Date(Date.now() - 21 * 86400000).toISOString(), action: "Record Created", by: "Elena Vasquez", notes: "Customer return received — Ford Dearborn" },
+      { timestamp: new Date(Date.now() - 21 * 86400000).toISOString(), action: "Material Quarantined", by: "Warehouse Lead" },
+      { timestamp: new Date(Date.now() - 18 * 86400000).toISOString(), action: "Sent to MRB Review", by: "Elena Vasquez" },
+      { timestamp: new Date(Date.now() - 14 * 86400000).toISOString(), action: "Awaiting Disposition Decision", by: "Elena Vasquez" },
+      { timestamp: new Date(Date.now() - 12 * 86400000).toISOString(), action: "Disposition Set: Rework", by: "Elena Vasquez", notes: "MRB approved reprocessing — reblend and retest" },
+      { timestamp: new Date(Date.now() - 10 * 86400000).toISOString(), action: "Rework Started", by: "Marcus Webb" },
+    ]);
+    const ssAuto3 = JSON.stringify({
+      automotive: {
+        customerNotified: true, customerNotificationDate: d(19),
+        customerRef: "FQ-2026-9341", ppapImpact: false,
+        controlPlanUpdateRequired: false, pfmeaUpdateRequired: false, warrantyClaim: false,
+      },
+    });
+    await db.execute(sql`
+      INSERT INTO ncmr_records (
+        user_id, iso_project_id, ncmr_number, title, description,
+        part_number, part_name, lot_number, quantity, unit,
+        source_type, customer_name, identified_by, identified_date, department,
+        severity, nc_type, iso_clause, immediate_containment, status,
+        quarantine_required, quarantine_location, quarantine_tag_number,
+        quarantine_date, quarantine_by,
+        disposition_decision, disposition_notes, disposition_approved_by, disposition_approval_date,
+        rework_instructions, rework_assigned_to, rework_due_date, rework_start_date,
+        verification_required,
+        capa_required, capa_linked_nc_number,
+        standard_specific, audit_trail, created_at, updated_at
+      ) VALUES (
+        ${userId}, ${isoProjectId}, 'NCMR-2026-0003',
+        'Customer Return — Contaminated DOT 4 Brake Fluid (Ford Dearborn)',
+        'Ford Motor Company — Dearborn Assembly returned 4 × 55-gallon drums of DOT 4 brake fluid (Lot BF-DOT4-2025-0287). Customer reported amber discoloration (spec: clear to light yellow) and odor inconsistency. Internal testing confirmed petroleum contamination at 180 ppm (limit: 50 ppm). Root cause: shared transfer pump not purged between product changeovers.',
+        'BF-DOT4-002', 'DOT 4 Brake Fluid', 'BF-DOT4-2025-0287', '880', 'liters',
+        'customer_return', 'Ford Motor Company — Dearborn Assembly', 'Elena Vasquez', ${d(21)}, 'QC / Production',
+        'major', 'contamination', '8.7',
+        'All 4 drums quarantined in returned goods area. Inventory recall check on same production run lot. Dedicated transfer pump assigned to brake fluid lines only — effective immediately.',
+        'rework_in_progress',
+        true, 'Returned Goods — Bay 4', 'TAG-2026-0039',
+        ${d(21)}, 'Warehouse Lead',
+        'rework', 'Reprocess through activated carbon filtration and reblend. Full QC test panel required before release.', 'Elena Vasquez', ${d(12)},
+        'Full reblend through activated carbon filter. Retest: pH, viscosity, wet boiling point, ERBP, color, odor. All 5 COA parameters must pass before release.',
+        'Marcus Webb', ${df(3)}, ${d(10)},
+        true,
+        true, 'NC-2026-0044',
+        ${ssAuto3}::jsonb, ${trail3}::jsonb, NOW() - INTERVAL '21 days', NOW() - INTERVAL '10 days'
+      )
+    `);
+
+    // ── NCMR-2026-0004: Closed — label mix-up, relabeled and released ────────
+    const trail4 = JSON.stringify([
+      { timestamp: new Date(Date.now() - 35 * 86400000).toISOString(), action: "Record Created", by: "Production Supervisor", notes: "Label error caught at final inspection" },
+      { timestamp: new Date(Date.now() - 35 * 86400000).toISOString(), action: "Material Quarantined", by: "Production Supervisor" },
+      { timestamp: new Date(Date.now() - 33 * 86400000).toISOString(), action: "Sent to MRB Review", by: "Elena Vasquez" },
+      { timestamp: new Date(Date.now() - 31 * 86400000).toISOString(), action: "Awaiting Disposition Decision", by: "Elena Vasquez" },
+      { timestamp: new Date(Date.now() - 31 * 86400000).toISOString(), action: "Disposition Set: Rework", by: "Elena Vasquez", notes: "Relabel only — product integrity unaffected" },
+      { timestamp: new Date(Date.now() - 30 * 86400000).toISOString(), action: "Rework Started", by: "Packaging Lead" },
+      { timestamp: new Date(Date.now() - 28 * 86400000).toISOString(), action: "Rework Complete — Awaiting Verification", by: "Packaging Lead" },
+      { timestamp: new Date(Date.now() - 27 * 86400000).toISOString(), action: "Verification Passed — Material Released", by: "QC Inspector", notes: "100% label check passed. Product released to warehouse." },
+      { timestamp: new Date(Date.now() - 27 * 86400000).toISOString(), action: "NCMR Closed", by: "Elena Vasquez" },
+    ]);
+    await db.execute(sql`
+      INSERT INTO ncmr_records (
+        user_id, iso_project_id, ncmr_number, title, description,
+        part_number, lot_number, quantity, unit,
+        source_type, identified_by, identified_date, department,
+        severity, nc_type, iso_clause, immediate_containment, status,
+        quarantine_required, quarantine_location, quarantine_date, quarantine_by,
+        disposition_decision, disposition_notes, disposition_approved_by, disposition_approval_date,
+        rework_instructions, rework_assigned_to, rework_due_date, rework_start_date, rework_completed_date,
+        verification_required, verification_activity, verification_by, verification_date, verification_result,
+        capa_required, capa_decision_notes,
+        closed_by, closed_date, closure_notes,
+        audit_trail, created_at, updated_at
+      ) VALUES (
+        ${userId}, ${isoProjectId}, 'NCMR-2026-0004',
+        'Wrong Label Applied — DOT 3 / DOT 4 Mix-Up on Filling Line',
+        'Final inspection identified 48 × 1-gallon containers of DOT 4 brake fluid incorrectly labeled as DOT 3. Label mix-up occurred during line changeover — label roll not changed before start of filling run. No product contamination; label error only.',
+        'BF-DOT4-003', 'BF-DOT4-2025-0301', '48', 'gallons',
+        'production', 'Packaging Inspector', ${d(35)}, 'Filling & Packaging',
+        'minor', 'labeling', '8.5.2',
+        'All 48 containers isolated before palletizing. Line stopped. Label roll inventory verified across all active filling lines.',
+        'released',
+        true, 'Finished Goods Hold — Section A', ${d(35)}, 'Production Supervisor',
+        'rework', 'Remove incorrect labels and apply correct DOT 4 labels per WI-PKG-005. 100% visual inspection after relabeling.', 'Elena Vasquez', ${d(31)},
+        'Remove all incorrect labels. Clean container surfaces. Apply correct DOT 4 label per WI-PKG-005. Submit to QC for 100% label verification (F-PKG-012).',
+        'Packaging Lead', ${d(29)}, ${d(30)}, ${d(28)},
+        true, '100% label verification per label verification checklist (F-PKG-012)', 'QC Inspector', ${d(27)}, 'pass',
+        false, 'Root cause isolated to procedural gap at line changeover. Label verification step added to changeover checklist same day. CAPA not required.',
+        'Elena Vasquez', ${d(27)}, 'All 48 containers relabeled and verified per checklist. Changeover SOP updated with label roll verification step. No further corrective action required.',
+        ${trail4}::jsonb, NOW() - INTERVAL '35 days', NOW() - INTERVAL '27 days'
+      )
+    `);
+
+    console.log(`[demo-seed] Seeded 4 NCMR records for userId=${userId}.`);
+  } catch (err: any) {
+    console.error("[demo-seed] NCMR seed error:", err.message);
   }
 }
