@@ -27,7 +27,7 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
-  ScanSearch, Leaf, HardHat, Files,
+  ScanSearch, Leaf, HardHat, Files, Check,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -3295,6 +3295,63 @@ function OrgLogoUpload({ project }: { project: IsoProject }) {
   );
 }
 
+function OrgNameEdit({ project }: { project: IsoProject }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState((project as any).orgName || "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", { orgName: trimmed });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setEditing(false);
+    } catch { /* silent */ }
+    finally { setSaving(false); }
+  };
+
+  const cancel = () => {
+    setValue((project as any).orgName || "");
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 flex-1">
+        <Input
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
+          className="h-8 text-sm font-semibold"
+          autoFocus
+          data-testid="input-org-name-edit"
+        />
+        <Button size="sm" onClick={save} disabled={saving || !value.trim()} className="h-8 px-3 gap-1.5 bg-accent hover:bg-accent/90 text-white text-xs" data-testid="button-save-org-name">
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={cancel} disabled={saving} className="h-8 px-2 text-muted-foreground" data-testid="button-cancel-org-name">
+          <X className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-1 group">
+      <span className="text-sm font-semibold text-primary">{(project as any).orgName || <span className="text-muted-foreground italic">Not set</span>}</span>
+      <Button size="sm" variant="ghost" onClick={() => setEditing(true)}
+        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-accent"
+        data-testid="button-edit-org-name">
+        <Pencil className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+}
+
 function SystemProfileModule({ project, onStartWizard }: { project: IsoProject | null; onStartWizard: () => void }) {
   if (!project || project.status === "not_started") {
     return (
@@ -3361,12 +3418,10 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
               <h2 className="text-sm font-black text-primary uppercase tracking-wide">Organization Profile</h2>
             </div>
             <div className="bg-white dark:bg-card rounded-xl border border-border/60 divide-y divide-border/40">
-              {project.orgName && (
-                <div className="flex items-center gap-4 px-5 py-3">
-                  <span className="text-xs text-muted-foreground w-36 shrink-0">Organization Name</span>
-                  <span className="text-sm font-semibold text-primary">{project.orgName}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-4 px-5 py-3">
+                <span className="text-xs text-muted-foreground w-36 shrink-0">Organization Name</span>
+                <OrgNameEdit project={project} />
+              </div>
               {project.orgAddress && (
                 <div className="flex items-center gap-4 px-5 py-3">
                   <span className="text-xs text-muted-foreground w-36 shrink-0">Address</span>
