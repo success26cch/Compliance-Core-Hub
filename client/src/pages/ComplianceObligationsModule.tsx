@@ -1841,7 +1841,7 @@ export default function ComplianceObligationsModule({
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const isSuperadmin = !!(user as any)?.claims?.isSuperadmin;
+  const isSuperadmin = !!(user as any)?.isSuperadmin;
   const isMedDevice = !!(project?.standard?.includes("13485")) || isSuperadmin;
   const isEHS = !!(project?.standard?.includes("14001") || project?.standard?.includes("45001"));
 
@@ -2217,7 +2217,7 @@ export default function ComplianceObligationsModule({
             <div className="flex items-center gap-2.5 mb-1">
               <Shield className="w-6 h-6 text-accent" />
               <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 6.1.3 + 9.1.2</Badge>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">{registerCtx.evalClause}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">{registerCtx.description}</p>
           </div>
