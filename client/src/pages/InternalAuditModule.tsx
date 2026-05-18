@@ -16,7 +16,7 @@ import {
   Calendar, User, BookOpen, Shield, Activity, AlertCircle,
   BarChart3, Info, CheckCircle2, Clock, HardHat, FileText,
   Users, ListChecks, Target, Search, Lightbulb, Edit3,
-  Package, Factory, Bell, CheckSquare,
+  Package, Factory, Bell, CheckSquare, ShieldAlert,
 } from "lucide-react";
 import type { IsoAudit, IsoAuditFinding, IsoAuditProcessNote, AuditProcessSchedule, IatfProductAudit, IatfMfgProcessAudit, ProductAuditChecklistItem, MfgProcessAuditChecklistItem, IatfAuditSchedule } from "@shared/schema";
 import type { ProcessEntry } from "./ProcessMapModule";
