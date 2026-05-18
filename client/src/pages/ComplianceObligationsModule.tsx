@@ -1846,17 +1846,19 @@ export default function ComplianceObligationsModule({
   const isEHS = !!(project?.standard?.includes("14001") || project?.standard?.includes("45001"));
 
   // Derive which regulatory standard options are in scope from the System Profile.
-  // isSuperadmin sees all (demo account). Everyone else only sees what their profile covers.
+  // Always driven by the configured standard — isSuperadmin does NOT override scoping.
+  // Falls back to all standards only when no standard is configured yet (new/empty profile).
   const inScopeStandards = useMemo(() => {
-    if (isSuperadmin) return new Set(STANDARD_OPTIONS.map(s => s.value));
     const std = project?.standard ?? "";
     const s = new Set<string>();
     if (std.includes("14001")) s.add("ISO 14001");
     if (std.includes("45001")) s.add("ISO 45001");
     if (std.includes("14001") && std.includes("45001")) s.add("Both");
     if (std.includes("13485")) { s.add("FDA 21 CFR 820 — QSR"); s.add("EU MDR 2017/745"); }
+    // No standard configured yet → show all so the register isn't completely empty
+    if (s.size === 0) return new Set(STANDARD_OPTIONS.map(o => o.value));
     return s;
-  }, [project?.standard, isSuperadmin]);
+  }, [project?.standard]);
 
   // Only present filter options that are relevant to this company's scope
   const activeStandardOptions = useMemo(
